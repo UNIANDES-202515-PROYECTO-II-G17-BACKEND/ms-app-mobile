@@ -13,7 +13,6 @@ const SettingsScreen = () => {
 
   const handleLanguageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedLanguage = event.target.value;
-    console.log('Selected language:', selectedLanguage);
     setLanguage(selectedLanguage);
     await changeLanguage(selectedLanguage);
   };
