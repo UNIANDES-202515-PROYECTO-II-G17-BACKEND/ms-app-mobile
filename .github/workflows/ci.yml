@@ -1,0 +1,46 @@
+name: CI - MediSupply Mobile (Expo)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality - Install, Lint, Typecheck, Tests, Expo Doctor
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Corre si tienes TS y script "typecheck"
+      - name: Typecheck
+        run: |
+          if npm run | grep -q "typecheck"; then npm run typecheck; else echo "No 'typecheck' script"; fi
+
+      # Corre Jest si existe "test"
+      - name: Unit tests (Jest)
+        env:
+          CI: true
+        run: |
+          if npm run | grep -q "test"; then npm test -- --ci --runInBand; else echo "No 'test' script"; fi
+
+      # Valida el proyecto Expo (muy útil en CI para detectar problemas comunes)
+      - name: Expo Doctor
+        run: npx expo-doctor
