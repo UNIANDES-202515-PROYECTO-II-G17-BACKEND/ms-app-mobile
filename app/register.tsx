@@ -1,9 +1,11 @@
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, StyleSheet, View } from 'react-native';
-import logo from '../assets/images/logo.png';
+import { Image } from 'react-native';
+import theme from './common/theme';
+import { CountryCode, register } from './services/authService';
 
 export default function RegisterPage() {
   const { t } = useTranslation();
@@ -16,14 +18,16 @@ export default function RegisterPage() {
     email: '',
     username: '',
     password: '',
+    country: 'mx' as CountryCode,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (field: keyof typeof formData) => (event: { target: { value: string } }) => {
+  const handleInputChange = (field: keyof typeof formData) => (event: any) => {
+    const value = event?.target?.value ?? event?.nativeEvent?.text ?? '';
     setFormData({
       ...formData,
-      [field]: event.target.value,
+      [field]: value,
     });
   };
 
@@ -32,7 +36,11 @@ export default function RegisterPage() {
       setError('');
       setLoading(true);
       
-      // TODO: Implement registration logic
+      await register({
+        username: formData.username,
+        password: formData.password,
+        institution_name: formData.institutionName,
+      }, formData.country);
       
       // Navigate to login on success
       router.replace('/login');
@@ -44,14 +52,22 @@ export default function RegisterPage() {
   };
 
   return (
-    <View style={styles.container}>
-      <Box sx={{ maxWidth: 400, width: '100%' }}>
-        <Image source={logo} alt="MediSupply Logo" style={styles.logo} />
-        <Box sx={{ mt: 2 }}>
+    <ThemeProvider theme={theme}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        height="100vh"
+        bgcolor="secondary.main"
+      >
+        <Image source={require('../assets/images/logo.png')} alt="MediSupply Logo" width={100} height={100} />
+        <Box width="300px" mt={2}>
           <TextField
             label={t('institutionName')}
             value={formData.institutionName}
             onChange={handleInputChange('institutionName')}
+            variant="outlined"
             margin="normal"
             fullWidth
           />
@@ -59,6 +75,7 @@ export default function RegisterPage() {
             label={t('nit')}
             value={formData.nit}
             onChange={handleInputChange('nit')}
+            variant="outlined"
             margin="normal"
             fullWidth
           />
@@ -66,6 +83,7 @@ export default function RegisterPage() {
             label={t('phone')}
             value={formData.phone}
             onChange={handleInputChange('phone')}
+            variant="outlined"
             margin="normal"
             fullWidth
           />
@@ -74,6 +92,7 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={handleInputChange('email')}
             type="email"
+            variant="outlined"
             margin="normal"
             fullWidth
           />
@@ -81,6 +100,7 @@ export default function RegisterPage() {
             label={t('username')}
             value={formData.username}
             onChange={handleInputChange('username')}
+            variant="outlined"
             margin="normal"
             fullWidth
           />
@@ -89,14 +109,30 @@ export default function RegisterPage() {
             value={formData.password}
             onChange={handleInputChange('password')}
             type="password"
+            variant="outlined"
             margin="normal"
             fullWidth
           />
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>{t('country')}</InputLabel>
+            <Select
+              value={formData.country}
+              label={t('country')}
+              onChange={handleInputChange('country')}
+            >
+              <MenuItem value="mx">México</MenuItem>
+              <MenuItem value="co">Colombia</MenuItem>
+              <MenuItem value="pe">Perú</MenuItem>
+              <MenuItem value="ar">Argentina</MenuItem>
+            </Select>
+          </FormControl>
           
           <Button
             onClick={handleSubmit}
             disabled={loading}
             variant="contained"
+            color="primary"
             fullWidth
             sx={{ mt: 2 }}
           >
@@ -106,6 +142,7 @@ export default function RegisterPage() {
           <Button
             onClick={() => router.replace('/login')}
             variant="text"
+            color="primary"
             fullWidth
             sx={{ mt: 1 }}
           >
@@ -113,28 +150,13 @@ export default function RegisterPage() {
           </Button>
 
           {error && (
-            <Box sx={{ mt: 2, color: 'error.main' }}>
+            <Box mt={1} color="error.main">
               {error}
             </Box>
           )}
         </Box>
       </Box>
-    </View>
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  logo: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-  },
-});
