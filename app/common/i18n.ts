@@ -22,6 +22,8 @@ const resources = {
       nit: 'NIT',
       phone: 'Phone Number',
       email: 'Email',
+      orders: 'Orders',
+      deliveries: 'Deliveries',
     },
   },
   es: {
@@ -42,6 +44,8 @@ const resources = {
       nit: 'NIT',
       phone: 'Teléfono fijo',
       email: 'Correo electrónico',
+      orders: 'Pedidos',
+      deliveries: 'Entregas',
     },
   },
 };
