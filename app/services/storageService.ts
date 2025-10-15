@@ -46,4 +46,28 @@ export const getAccessToken = async (): Promise<string | null> => {
   }
 };
 
-export default { saveAuth, clearAuth, getAccessToken };
+export const getAuth = async (): Promise<AuthResponse | null> => {
+  try {
+    const AsyncStorage = getAsyncStorage();
+    const [accessToken, refreshToken, expiresAt] = await AsyncStorage.multiGet([
+      ACCESS_TOKEN_KEY,
+      REFRESH_TOKEN_KEY,
+      EXPIRES_AT_KEY,
+    ]);
+
+    if (!accessToken[1] || !refreshToken[1] || !expiresAt[1]) {
+      return null;
+    }
+
+    return {
+      access_token: accessToken[1],
+      refresh_token: refreshToken[1],
+      token_type: 'Bearer',
+      expires_in: parseInt(expiresAt[1], 10) - Math.floor(Date.now() / 1000),
+    };
+  } catch (e) {
+    return null;
+  }
+};
+
+export default { saveAuth, clearAuth, getAccessToken, getAuth };
