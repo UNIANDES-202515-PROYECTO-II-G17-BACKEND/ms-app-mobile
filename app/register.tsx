@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
 import { Box, Button, TextField } from '@mui/material';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Image, StyleSheet, View } from 'react-native';
 import logo from '../assets/images/logo.png';
 
 export default function RegisterPage() {
