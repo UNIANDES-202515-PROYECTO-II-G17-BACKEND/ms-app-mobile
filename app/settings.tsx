@@ -4,12 +4,14 @@ import { useTranslation } from 'react-i18next';
 import BottomNavigationBar from './common/BottomNavigationBar';
 import { changeLanguage } from './common/i18n';
 import theme from './common/theme';
+import { useUserRole } from './hooks/useUserRole';
 
 const SettingsScreen = () => {
   const { t } = useTranslation();
   const [value, setValue] = React.useState(3); // Default to 'Settings' tab
   const [country, setCountry] = React.useState('Colombia');
   const [language, setLanguage] = React.useState('es');
+  const { userRole } = useUserRole();
 
   const handleLanguageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedLanguage = event.target.value;
@@ -54,7 +56,7 @@ const SettingsScreen = () => {
             </FormControl>
           </Box>
         </Box>
-        <BottomNavigationBar value={value} setValue={setValue} />
+        <BottomNavigationBar value={value} setValue={setValue} role={userRole} />
       </Box>
     </ThemeProvider>
   );
