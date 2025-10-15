@@ -27,6 +27,12 @@ export default function RootLayout() {
           headerShown: false 
         }} 
       />
+      <Stack.Screen 
+        name="new-order" 
+        options={{ 
+          headerShown: false 
+        }} 
+      />
     </Stack>
   );
 }

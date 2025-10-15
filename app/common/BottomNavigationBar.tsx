@@ -50,7 +50,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/');
           break;
         case 1:
-          // router.push('/orders'); // TODO: Crear pantalla de pedidos
+          router.push('/new-order' as any);
           break;
         case 2:
           // router.push('/deliveries'); // TODO: Crear pantalla de entregas
