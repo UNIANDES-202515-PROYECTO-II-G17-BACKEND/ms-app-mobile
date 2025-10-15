@@ -88,6 +88,7 @@ const LoginPage = () => {
             color="primary"
             fullWidth
             sx={{ mt: 1 }}
+            onClick={() => router.push('/register')}
           >
             {t('createAccount')}
           </Button>
