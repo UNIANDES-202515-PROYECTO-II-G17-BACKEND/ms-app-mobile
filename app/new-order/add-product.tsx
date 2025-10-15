@@ -1,5 +1,4 @@
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Alert, Box, Button, CircularProgress, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, ThemeProvider, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, ThemeProvider, Typography } from '@mui/material';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -119,16 +118,6 @@ const AddProductScreen = () => {
   return (
     <ThemeProvider theme={theme}>
       <Box bgcolor="secondary.main" minHeight="100vh" display="flex" flexDirection="column">
-        {/* Header */}
-        <Box bgcolor="primary.main" p={2} display="flex" alignItems="center">
-          <IconButton onClick={() => router.back()} sx={{ color: 'white', mr: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" color="white">
-            MediSupply
-          </Typography>
-        </Box>
-
         {/* Content */}
         <Box flex={1} p={3}>
           <Typography variant="h5" color="primary" align="center" mb={3}>

@@ -1,5 +1,4 @@
 import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Box, Button, Fab, IconButton, List, ListItem, ListItemText, TextField, ThemeProvider, Typography } from '@mui/material';
 import { Link, useRouter } from 'expo-router';
@@ -17,7 +16,7 @@ const NewOrderScreen = () => {
 
   const handleCancel = () => {
     clearProducts();
-    router.back();
+    router.push('/');
   };
 
   const handleSend = () => {
@@ -59,16 +58,6 @@ const NewOrderScreen = () => {
   return (
     <ThemeProvider theme={theme}>
       <Box bgcolor="secondary.main" minHeight="100vh" display="flex" flexDirection="column">
-        {/* Header */}
-        <Box bgcolor="primary.main" p={2} display="flex" alignItems="center">
-          <IconButton onClick={() => router.back()} sx={{ color: 'white', mr: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" color="white">
-            MediSupply
-          </Typography>
-        </Box>
-
         {/* Content */}
         <Box flex={1} p={3}>
           <Typography variant="h5" color="primary" align="center" mb={3}>
