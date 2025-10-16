@@ -1,12 +1,12 @@
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, Button, Fab, IconButton, List, ListItem, ListItemText, TextField, ThemeProvider, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Fab, IconButton, List, ListItem, ListItemText, Snackbar, TextField, ThemeProvider, Typography } from '@mui/material';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import theme from '../common/theme';
 import { useOrder } from '../contexts/OrderContext';
-import { getAccessToken } from '../services/storageService';
+import { createOrder } from '../services/orderService';
 import { getCurrentUser } from '../services/userService';
 
 const NewOrderScreen = () => {
@@ -15,6 +15,9 @@ const NewOrderScreen = () => {
   const { products, removeProduct, clearProducts } = useOrder();
   const [deliveryDate, setDeliveryDate] = useState('');
   const [orderObservations, setOrderObservations] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleCancel = () => {
     clearProducts();
@@ -23,52 +26,85 @@ const NewOrderScreen = () => {
 
   const handleSend = async () => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // Validar que haya productos en el pedido
+      if (products.length === 0) {
+        setError('Debe agregar al menos un producto al pedido');
+        setLoading(false);
+        return;
+      }
+
+      // Validar que todos los productos tengan bodega_id
+      const productsWithoutWarehouse = products.filter(p => !p.bodega_id);
+      if (productsWithoutWarehouse.length > 0) {
+        setError('Algunos productos no tienen bodega asignada');
+        setLoading(false);
+        return;
+      }
+
       // Obtener el usuario autenticado
       const user = await getCurrentUser('co');
-      const token = await getAccessToken();
 
-      // Estructura del payload que se enviaría al servicio
-      const orderPayload = {
-        usuario_id: user.id,
-        fecha_entrega: deliveryDate,
-        observaciones_generales: orderObservations,
-        productos: products.map(product => ({
+      // Asignar cliente_id y vendedor_id según el rol del usuario
+      let clienteId: number;
+      let vendedorId: number;
+
+      if (user.role === 'institutional_customer') {
+        // Si es cliente institucional: cliente_id = user.id, vendedor_id = 9001
+        clienteId = parseInt(user.id, 10) || 12345;
+        vendedorId = 9001;
+      } else if (user.role === 'seller') {
+        // Si es vendedor: cliente_id = 12345, vendedor_id = user.id
+        clienteId = 12345;
+        vendedorId = parseInt(user.id, 10) || 9001;
+      } else {
+        // Valores por defecto para otros roles
+        clienteId = 12345;
+        vendedorId = 9001;
+      }
+
+      // Usar la bodega del primer producto (todas deberían ser la misma en este caso)
+      const bodegaOrigenId = products[0].bodega_id!;
+
+      // Preparar los items del pedido
+      const items = products.map(product => ({
         producto_id: product.id,
-        sku: product.sku,
-        nombre: product.nombre,
         cantidad: product.cantidad,
-        observaciones: product.observaciones || null
-      })),
-      total_productos: products.length,
-      cantidad_total: products.reduce((sum, p) => sum + p.cantidad, 0)
-    };
+        precio_unitario: product.precio_unitario || 0,
+        impuesto_pct: product.impuesto_pct || 19,
+        sku: product.sku
+      }));
 
-    console.log('==============================================');
-    console.log('📦 DATOS QUE SE ENVIARÍAN AL SERVICIO DE PEDIDOS:');
-    console.log('==============================================');
-    console.log(`Usuario ID: ${user.id}`);
-    console.log(`Usuario: ${user.username}`);
-    console.log(`Token: ${token?.substring(0, 20)}...`);
-    console.log('==============================================');
-    console.log(JSON.stringify(orderPayload, null, 2));
-    console.log('==============================================');
-    console.log('Resumen:');
-    console.log(`- Usuario ID: ${user.id}`);
-    console.log(`- Fecha de entrega: ${deliveryDate || 'No especificada'}`);
-    console.log(`- Total de productos: ${products.length}`);
-    console.log(`- Cantidad total de items: ${orderPayload.cantidad_total}`);
-    console.log(`- Observaciones: ${orderObservations || 'Ninguna'}`);
-    console.log('==============================================');
-    
-    // TODO: Implementar llamada al servicio de creación de pedido
-    // const response = await orderService.createOrder(orderPayload, token);
-    
-    // Limpiar productos después de enviar
-    clearProducts();
-    router.push('/');
-    } catch (error) {
-      console.error('Error al preparar el pedido:', error);
-      // TODO: Mostrar mensaje de error al usuario
+      // Crear el payload del pedido
+      const orderPayload = {
+        tipo: 'VENTA',
+        cliente_id: clienteId,
+        vendedor_id: vendedorId,
+        bodega_origen_id: bodegaOrigenId,
+        items: items,
+        observaciones: orderObservations || undefined,
+      };
+
+      // Llamar al servicio de creación de pedido
+      const response = await createOrder(orderPayload, 'co');
+
+      // Mostrar mensaje de éxito
+      setSuccessMessage('Pedido creado exitosamente');
+
+      // Limpiar productos después de enviar
+      clearProducts();
+      
+      // Redirigir después de un breve delay para mostrar el mensaje
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } catch (err) {
+      console.error('Error al crear el pedido:', err);
+      setError(err instanceof Error ? err.message : 'Error al crear el pedido');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,6 +229,7 @@ const NewOrderScreen = () => {
             fullWidth
             variant="outlined"
             onClick={handleCancel}
+            disabled={loading}
             sx={{
               borderColor: 'primary.main',
               color: 'primary.main',
@@ -206,6 +243,7 @@ const NewOrderScreen = () => {
             fullWidth
             variant="contained"
             onClick={handleSend}
+            disabled={loading || products.length === 0}
             sx={{
               bgcolor: 'primary.main',
               color: 'white',
@@ -214,11 +252,39 @@ const NewOrderScreen = () => {
               '&:hover': {
                 bgcolor: 'primary.dark',
               },
+              '&:disabled': {
+                bgcolor: 'grey.300',
+                color: 'grey.500',
+              },
             }}
           >
-            {t('send')}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('send')}
           </Button>
         </Box>
+
+        {/* Snackbar para errores */}
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+            {error}
+          </Alert>
+        </Snackbar>
+
+        {/* Snackbar para éxito */}
+        <Snackbar
+          open={!!successMessage}
+          autoHideDuration={3000}
+          onClose={() => setSuccessMessage(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+            {successMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </ThemeProvider>
   );

@@ -26,6 +26,12 @@ export interface ProductDetail extends Product {
   lotes: Lote[];
 }
 
+export interface ProductLocation {
+  bodega_id: string;
+  bodega_nombre: string;
+  stock_disponible: number;
+}
+
 const BASE_URL = 'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1';
 
 export const getAllProducts = async (country: string, limit: number = 100, offset: number = 0): Promise<Product[]> => {
@@ -60,7 +66,24 @@ export const getProductDetail = async (productId: string, country: string): Prom
   return await response.json();
 };
 
+export const getProductLocations = async (productId: string, country: string): Promise<ProductLocation[]> => {
+  const response = await fetch(`${BASE_URL}/inventario/producto/${productId}/ubicaciones`, {
+    method: 'GET',
+    headers: {
+      'X-Country': country,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch product locations: ${response.status} ${text}`);
+  }
+
+  return await response.json();
+};
+
 export default {
   getAllProducts,
   getProductDetail,
+  getProductLocations,
 };

@@ -7,6 +7,9 @@ export interface OrderProduct {
   cantidad: number;
   stock: number;
   observaciones?: string;
+  bodega_id?: string;
+  precio_unitario?: number;
+  impuesto_pct?: number;
 }
 
 interface OrderContextType {

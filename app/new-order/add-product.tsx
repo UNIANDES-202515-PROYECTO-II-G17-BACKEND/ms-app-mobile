@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import theme from '../common/theme';
 import { useOrder } from '../contexts/OrderContext';
-import { getAllProducts, getProductDetail, Product, ProductDetail } from '../services/productService';
+import { getAllProducts, getProductDetail, getProductLocations, Product, ProductDetail, ProductLocation } from '../services/productService';
 
 const AddProductScreen = () => {
   const { t } = useTranslation();
@@ -13,6 +13,7 @@ const AddProductScreen = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [productDetail, setProductDetail] = useState<ProductDetail | null>(null);
+  const [productLocations, setProductLocations] = useState<ProductLocation[]>([]);
   const [quantity, setQuantity] = useState('');
   const [observations, setObservations] = useState('');
   const [loading, setLoading] = useState(true);
@@ -49,8 +50,12 @@ const AddProductScreen = () => {
   const loadProductDetail = async (productId: string) => {
     try {
       setLoadingDetail(true);
-      const detail = await getProductDetail(productId, 'co');
+      const [detail, locations] = await Promise.all([
+        getProductDetail(productId, 'co'),
+        getProductLocations(productId, 'co')
+      ]);
       setProductDetail(detail);
+      setProductLocations(locations);
     } catch (err) {
       console.error('Error loading product detail:', err);
       setError('Error al cargar el detalle del producto');
@@ -83,6 +88,9 @@ const AddProductScreen = () => {
       return;
     }
 
+    // Obtener la primera bodega disponible (si existe)
+    const bodegaId = productLocations.length > 0 ? productLocations[0].bodega_id : undefined;
+
     // Agregar producto al pedido usando el contexto
     addProduct({
       id: selectedProductId,
@@ -91,13 +99,9 @@ const AddProductScreen = () => {
       cantidad: parseInt(quantity, 10),
       stock: productDetail.stock_total,
       observaciones: observations || undefined,
-    });
-
-    console.log('Producto agregado:', {
-      productId: selectedProductId,
-      productName: productDetail.nombre,
-      quantity: parseInt(quantity, 10),
-      observations,
+      bodega_id: bodegaId,
+      precio_unitario: 0, // Valor por defecto, se puede ajustar según necesidad
+      impuesto_pct: 19, // IVA por defecto para Colombia
     });
 
     router.back();
