@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import theme from '../common/theme';
 import { useOrder } from '../contexts/OrderContext';
+import { getAccessToken } from '../services/storageService';
+import { getCurrentUser } from '../services/userService';
 
 const NewOrderScreen = () => {
   const { t } = useTranslation();
@@ -19,12 +21,18 @@ const NewOrderScreen = () => {
     router.push('/');
   };
 
-  const handleSend = () => {
-    // Estructura del payload que se enviaría al servicio
-    const orderPayload = {
-      fecha_entrega: deliveryDate,
-      observaciones_generales: orderObservations,
-      productos: products.map(product => ({
+  const handleSend = async () => {
+    try {
+      // Obtener el usuario autenticado
+      const user = await getCurrentUser('co');
+      const token = await getAccessToken();
+
+      // Estructura del payload que se enviaría al servicio
+      const orderPayload = {
+        usuario_id: user.id,
+        fecha_entrega: deliveryDate,
+        observaciones_generales: orderObservations,
+        productos: products.map(product => ({
         producto_id: product.id,
         sku: product.sku,
         nombre: product.nombre,
@@ -38,9 +46,14 @@ const NewOrderScreen = () => {
     console.log('==============================================');
     console.log('📦 DATOS QUE SE ENVIARÍAN AL SERVICIO DE PEDIDOS:');
     console.log('==============================================');
+    console.log(`Usuario ID: ${user.id}`);
+    console.log(`Usuario: ${user.username}`);
+    console.log(`Token: ${token?.substring(0, 20)}...`);
+    console.log('==============================================');
     console.log(JSON.stringify(orderPayload, null, 2));
     console.log('==============================================');
     console.log('Resumen:');
+    console.log(`- Usuario ID: ${user.id}`);
     console.log(`- Fecha de entrega: ${deliveryDate || 'No especificada'}`);
     console.log(`- Total de productos: ${products.length}`);
     console.log(`- Cantidad total de items: ${orderPayload.cantidad_total}`);
@@ -48,11 +61,15 @@ const NewOrderScreen = () => {
     console.log('==============================================');
     
     // TODO: Implementar llamada al servicio de creación de pedido
-    // const response = await orderService.createOrder(orderPayload);
+    // const response = await orderService.createOrder(orderPayload, token);
     
     // Limpiar productos después de enviar
     clearProducts();
-    router.back();
+    router.push('/');
+    } catch (error) {
+      console.error('Error al preparar el pedido:', error);
+      // TODO: Mostrar mensaje de error al usuario
+    }
   };
 
   return (
