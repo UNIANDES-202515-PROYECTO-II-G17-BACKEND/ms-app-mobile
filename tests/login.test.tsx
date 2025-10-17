@@ -130,7 +130,7 @@ describe('LoginPage', () => {
     // Verificar que se llamaron los servicios con los valores correctos
     expect(login).toHaveBeenCalledWith('testuser', 'testpass', 'mx');
     expect(saveAuth).toHaveBeenCalledWith(mockLoginResponse);
-    expect(mockRouter.replace).toHaveBeenCalledWith('/settings');
+    expect(mockRouter.replace).toHaveBeenCalledWith('/home');
   });
 
   it('maneja errores de login y muestra mensaje', async () => {

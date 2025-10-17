@@ -1,8 +1,17 @@
-import { Alert, Box, Button, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField, ThemeProvider, Typography } from '@mui/material';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import theme from '../common/theme';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { useOrder } from '../contexts/OrderContext';
 import { getAllProducts, getProductDetail, getProductLocations, Product, ProductDetail, ProductLocation } from '../services/productService';
 
@@ -111,152 +120,389 @@ const AddProductScreen = () => {
 
   if (loading) {
     return (
-      <ThemeProvider theme={theme}>
-        <Box bgcolor="secondary.main" minHeight="100vh" display="flex" alignItems="center" justifyContent="center">
-          <CircularProgress />
-        </Box>
-      </ThemeProvider>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6750A4" />
+      </View>
     );
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box bgcolor="secondary.main" minHeight="100vh" display="flex" flexDirection="column">
-        {/* Content */}
-        <Box flex={1} p={3}>
-          <Typography variant="h5" color="primary" align="center" mb={3}>
-            {t('newProduct')}
-          </Typography>
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>{t('newProduct')}</Text>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
+        {error && (
+          <View style={styles.errorAlert}>
+            <Text style={styles.errorAlertText}>{error}</Text>
+          </View>
+        )}
+
+        {/* Select de Elemento (Producto) */}
+        <ProductSelect
+          label={t('element')}
+          value={selectedProductId}
+          products={products}
+          onChange={setSelectedProductId}
+        />
+
+        {/* Mostrar stock del producto seleccionado */}
+        {loadingDetail && (
+          <View style={styles.loadingDetail}>
+            <ActivityIndicator size="small" color="#6750A4" />
+          </View>
+        )}
+
+        {productDetail && !loadingDetail && (
+          <View style={styles.stockContainer}>
+            <Text style={styles.stockText}>
+              {t('stock')}: {productDetail.stock_total}
+            </Text>
+          </View>
+        )}
+
+        {/* Campo Cantidad */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>{t('quantity')}</Text>
+          <TextInput
+            style={[styles.input, quantityError && styles.inputError]}
+            value={quantity}
+            onChangeText={handleQuantityChange}
+            placeholder={t('quantity')}
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+          />
+          {quantityError && (
+            <Text style={styles.errorText}>{quantityError}</Text>
           )}
+        </View>
 
-          {/* Select de Elemento (Producto) */}
-          <Box mb={2}>
-            <FormControl fullWidth>
-              <InputLabel id="product-select-label">{t('element')}</InputLabel>
-              <Select
-                labelId="product-select-label"
-                value={selectedProductId}
-                label={t('element')}
-                onChange={(e) => setSelectedProductId(e.target.value)}
-                sx={{
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'primary.main',
-                  },
-                }}
-              >
-                <MenuItem value="">
-                  <em>{t('selectProduct')}</em>
-                </MenuItem>
-                {products.map((product) => (
-                  <MenuItem key={product.id} value={product.id}>
-                    {product.nombre} ({product.sku})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+        {/* Campo Observaciones */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>{t('observations')}</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={observations}
+            onChangeText={setObservations}
+            placeholder={t('observations')}
+            placeholderTextColor="#999"
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+        </View>
+      </ScrollView>
 
-          {/* Mostrar stock del producto seleccionado */}
-          {loadingDetail && (
-            <Box display="flex" justifyContent="center" mb={2}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
-
-          {productDetail && !loadingDetail && (
-            <Box mb={2}>
-              <Typography variant="body2" color="text.secondary">
-                {t('stock')}: {productDetail.stock_total}
-              </Typography>
-            </Box>
-          )}
-
-          {/* Campo Cantidad */}
-          <Box mb={2}>
-            <TextField
-              fullWidth
-              label={t('quantity')}
-              type="number"
-              value={quantity}
-              onChange={(e) => handleQuantityChange(e.target.value)}
-              error={!!quantityError}
-              helperText={quantityError}
-              inputProps={{ min: 1 }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Box>
-
-          {/* Campo Observaciones */}
-          <Box mb={3}>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label={t('observations')}
-              value={observations}
-              onChange={(e) => setObservations(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-            />
-          </Box>
-        </Box>
-
-        {/* Botones de acción */}
-        <Box p={2} display="flex" gap={2}>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={handleCancel}
-            sx={{
-              borderColor: 'primary.main',
-              color: 'primary.main',
-              textTransform: 'none',
-              fontSize: '1rem',
-            }}
-          >
-            {t('cancel')}
-          </Button>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleAdd}
-            disabled={isAddDisabled}
-            sx={{
-              bgcolor: 'primary.main',
-              color: 'white',
-              textTransform: 'none',
-              fontSize: '1rem',
-              '&:hover': {
-                bgcolor: 'primary.dark',
-              },
-              '&:disabled': {
-                bgcolor: 'grey.300',
-                color: 'grey.500',
-              },
-            }}
-          >
-            {t('add')}
-          </Button>
-        </Box>
-      </Box>
-    </ThemeProvider>
+      {/* Botones de acción */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={[styles.button, styles.cancelButton]}
+          onPress={handleCancel}
+        >
+          <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button, 
+            styles.addButton,
+            isAddDisabled && styles.addButtonDisabled
+          ]}
+          onPress={handleAdd}
+          disabled={isAddDisabled}
+        >
+          <Text style={styles.addButtonText}>{t('add')}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
+
+// Custom Product Select Component
+interface ProductSelectProps {
+  label: string;
+  value: string;
+  products: Product[];
+  onChange: (value: string) => void;
+}
+
+const ProductSelect: React.FC<ProductSelectProps> = ({ label, value, products, onChange }) => {
+  const { t } = useTranslation();
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  const selectedProduct = products.find(p => p.id === value);
+
+  return (
+    <View style={styles.selectContainer}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <TouchableOpacity
+        style={styles.selectButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={[
+          styles.selectButtonText,
+          !selectedProduct && styles.selectPlaceholder
+        ]}>
+          {selectedProduct 
+            ? `${selectedProduct.nombre} (${selectedProduct.sku})` 
+            : t('selectProduct')}
+        </Text>
+        <Text style={styles.selectArrow}>▼</Text>
+      </TouchableOpacity>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{label}</Text>
+            <ScrollView style={styles.modalScrollView}>
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  !value && styles.modalOptionSelected
+                ]}
+                onPress={() => {
+                  onChange('');
+                  setModalVisible(false);
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  !value && styles.modalOptionTextSelected
+                ]}>
+                  {t('selectProduct')}
+                </Text>
+              </TouchableOpacity>
+              {products.map((product) => (
+                <TouchableOpacity
+                  key={product.id}
+                  style={[
+                    styles.modalOption,
+                    product.id === value && styles.modalOptionSelected
+                  ]}
+                  onPress={() => {
+                    onChange(product.id);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.modalOptionText,
+                    product.id === value && styles.modalOptionTextSelected
+                  ]}>
+                    {product.nombre} ({product.sku})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6750A4',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  errorAlert: {
+    backgroundColor: '#FFEBEE',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorAlertText: {
+    color: '#C62828',
+    fontSize: 14,
+  },
+  selectContainer: {
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#6750A4',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  inputError: {
+    borderColor: '#C62828',
+  },
+  textArea: {
+    minHeight: 100,
+    paddingTop: 12,
+  },
+  errorText: {
+    color: '#C62828',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  selectButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#6750A4',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  selectButtonText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  selectPlaceholder: {
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  selectArrow: {
+    fontSize: 12,
+    color: '#6750A4',
+    marginLeft: 8,
+  },
+  loadingDetail: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  stockContainer: {
+    backgroundColor: '#E8DEF8',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  stockText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    width: '85%',
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  modalScrollView: {
+    maxHeight: 300,
+  },
+  modalOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalOptionSelected: {
+    backgroundColor: '#E8DEF8',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  modalOptionTextSelected: {
+    fontWeight: 'bold',
+    color: '#6750A4',
+  },
+  modalCloseButton: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#6750A4',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  button: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#6750A4',
+  },
+  cancelButtonText: {
+    color: '#6750A4',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  addButton: {
+    backgroundColor: '#6750A4',
+  },
+  addButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default AddProductScreen;

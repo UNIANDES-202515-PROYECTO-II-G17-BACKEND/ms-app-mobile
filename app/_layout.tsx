@@ -22,6 +22,12 @@ export default function RootLayout() {
         }} 
       />
       <Stack.Screen 
+        name="home" 
+        options={{ 
+          headerShown: false 
+        }} 
+      />
+      <Stack.Screen 
         name="settings" 
         options={{ 
           headerShown: false 

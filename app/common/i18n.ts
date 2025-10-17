@@ -37,6 +37,8 @@ const resources = {
       stock: 'Stock',
       selectProduct: 'Select a product',
       quantityExceedsStock: 'Quantity exceeds available stock',
+      logout: 'Log out',
+      logoutConfirmation: 'Are you sure you want to log out?',
     },
   },
   es: {
@@ -72,6 +74,8 @@ const resources = {
       stock: 'Stock',
       selectProduct: 'Selecciona un producto',
       quantityExceedsStock: 'La cantidad excede el stock disponible',
+      logout: 'Cerrar sesión',
+      logoutConfirmation: '¿Estás seguro de que deseas cerrar sesión?',
     },
   },
 };

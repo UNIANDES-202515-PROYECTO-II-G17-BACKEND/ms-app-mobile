@@ -1,42 +1,54 @@
-import { Box, CircularProgress, ThemeProvider, Typography } from '@mui/material';
-import React from 'react';
-import { I18nextProvider, useTranslation } from "react-i18next";
-import BottomNavigationBar from "./common/BottomNavigationBar";
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { I18nextProvider } from "react-i18next";
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import i18n from "./common/i18n";
-import theme from "./common/theme";
-import { useUserRole } from './hooks/useUserRole';
+import { getAccessToken } from './services/storageService';
 
 function HomeScreen() {
-  const { t } = useTranslation();
-  const [value, setValue] = React.useState(0); // Default to 'Home' tab
-  const { userRole, loading } = useUserRole();
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Box bgcolor="secondary.main" height="100vh" display="flex" alignItems="center" justifyContent="center">
-          <CircularProgress />
-        </Box>
-      </ThemeProvider>
-    );
-  }
+  useEffect(() => {
+    checkAuthAndRedirect();
+  }, []);
 
+  const checkAuthAndRedirect = async () => {
+    try {
+      const token = await getAccessToken();
+      
+      if (token) {
+        // Usuario autenticado, redirigir a home
+        router.replace('/home');
+      } else {
+        // Usuario no autenticado, redirigir a login
+        router.replace('/login');
+      }
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      // En caso de error, redirigir a login
+      router.replace('/login');
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  // Mostrar loading mientras verifica la autenticación
   return (
-    <ThemeProvider theme={theme}>
-      <Box bgcolor="secondary.main" height="100vh" display="flex" flexDirection="column">
-        <Box flex={1} display="flex" flexDirection="column" alignItems="center" justifyContent="center">
-          <Typography variant="h4" color="primary" gutterBottom>
-            {t('home')}
-          </Typography>
-          <Typography variant="body1" color="primary">
-            Bienvenido
-          </Typography>
-        </Box>
-        <BottomNavigationBar value={value} setValue={setValue} role={userRole} />
-      </Box>
-    </ThemeProvider>
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#6750A4" />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export default function Index() {
   return (
