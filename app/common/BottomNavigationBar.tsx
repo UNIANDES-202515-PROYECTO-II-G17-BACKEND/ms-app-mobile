@@ -34,6 +34,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/');
           break;
         case 1:
+          router.push('/new-order' as any);
           // router.push('/clients'); // TODO: Crear pantalla de clientes
           break;
         case 2:
@@ -66,7 +67,6 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/');
           break;
         case 1:
-          // router.push('/orders');
           break;
         case 2:
           // router.push('/deliveries');
@@ -87,6 +87,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         showLabels
       >
         <BottomNavigationAction label={t('home')} icon={<HomeIcon />} sx={{ color: 'primary.main' }} />
+        <BottomNavigationAction label={t('orders')} icon={<ShoppingCartIcon />} sx={{ color: 'primary.main' }} />
         <BottomNavigationAction label={t('clients')} icon={<GroupIcon />} sx={{ color: 'primary.main' }} />
         <BottomNavigationAction label={t('routes')} icon={<MapIcon />} sx={{ color: 'primary.main' }} />
         <BottomNavigationAction label={t('settings')} icon={<SettingsIcon />} sx={{ color: 'primary.main' }} />

@@ -1,13 +1,25 @@
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Alert, Box, Button, CircularProgress, Fab, IconButton, List, ListItem, ListItemText, Snackbar, TextField, ThemeProvider, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Fab, FormControl, IconButton, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Snackbar, TextField, ThemeProvider, Typography } from '@mui/material';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import theme from '../common/theme';
 import { useOrder } from '../contexts/OrderContext';
 import { createOrder } from '../services/orderService';
-import { getCurrentUser } from '../services/userService';
+import { getCurrentUser, getInstitutionalCustomers, getSellers, InstitutionalCustomer, Seller, UserInfo } from '../services/userService';
+
+// Función auxiliar para obtener el país del storage
+const getCountryFromStorage = async (): Promise<string> => {
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const storedCountry = await AsyncStorage.getItem('user_country');
+    return storedCountry || 'mx'; // Por defecto 'mx'
+  } catch (error) {
+    console.error('Error getting country from storage:', error);
+    return 'mx'; // Por defecto 'mx' en caso de error
+  }
+};
 
 const NewOrderScreen = () => {
   const { t } = useTranslation();
@@ -18,6 +30,51 @@ const NewOrderScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+  const [institutionalCustomers, setInstitutionalCustomers] = useState<InstitutionalCustomer[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userCountry, setUserCountry] = useState<string>('mx');
+
+  useEffect(() => {
+    loadUserAndRelatedUsers();
+  }, []);
+
+  const loadUserAndRelatedUsers = async () => {
+    try {
+      // Obtener el país del storage o usar 'mx' por defecto
+      const country = await getCountryFromStorage();
+      setUserCountry(country);
+      
+      const user = await getCurrentUser(country);
+      setCurrentUser(user);
+      console.log('Current user:', user);
+      console.log('Country:', country);
+
+      setLoadingUsers(true);
+      
+      if (user.role === 'seller') {
+        // Si el usuario es seller, cargar clientes institucionales
+        console.log('Loading institutional customers...');
+        const customers = await getInstitutionalCustomers(country, 100, 0);
+        console.log('Institutional customers loaded:', customers.length);
+        setInstitutionalCustomers(customers);
+      } else if (user.role === 'institutional_customer') {
+        // Si el usuario es cliente institucional, cargar sellers
+        console.log('Loading sellers...');
+        const sellersList = await getSellers(country, 100, 0);
+        console.log('Sellers loaded:', sellersList.length, sellersList);
+        setSellers(sellersList);
+      }
+      
+      setLoadingUsers(false);
+    } catch (err) {
+      console.error('Error loading user or related users:', err);
+      setError('Error al cargar la información del usuario');
+      setLoadingUsers(false);
+    }
+  };
 
   const handleCancel = () => {
     clearProducts();
@@ -45,19 +102,27 @@ const NewOrderScreen = () => {
       }
 
       // Obtener el usuario autenticado
-      const user = await getCurrentUser('co');
+      const user = currentUser || await getCurrentUser(userCountry);
+
+      // Validar que haya seleccionado un usuario (cliente o vendedor según el rol)
+      if (!selectedUserId) {
+        const userToSelectLabel = user.role === 'seller' ? 'un cliente institucional' : 'un vendedor';
+        setError(`Debe seleccionar ${userToSelectLabel}`);
+        setLoading(false);
+        return;
+      }
 
       // Asignar cliente_id y vendedor_id según el rol del usuario
       let clienteId: number;
       let vendedorId: number;
 
       if (user.role === 'institutional_customer') {
-        // Si es cliente institucional: cliente_id = user.id, vendedor_id = 9001
+        // Si es cliente institucional: cliente_id = user.id, vendedor_id = seller seleccionado
         clienteId = parseInt(user.id, 10) || 12345;
-        vendedorId = 9001;
+        vendedorId = selectedUserId;
       } else if (user.role === 'seller') {
-        // Si es vendedor: cliente_id = 12345, vendedor_id = user.id
-        clienteId = 12345;
+        // Si es vendedor: cliente_id = cliente seleccionado, vendedor_id = user.id
+        clienteId = selectedUserId;
         vendedorId = parseInt(user.id, 10) || 9001;
       } else {
         // Valores por defecto para otros roles
@@ -88,7 +153,7 @@ const NewOrderScreen = () => {
       };
 
       // Llamar al servicio de creación de pedido
-      const response = await createOrder(orderPayload, 'co');
+      const response = await createOrder(orderPayload, userCountry);
 
       // Mostrar mensaje de éxito
       setSuccessMessage('Pedido creado exitosamente');
@@ -137,6 +202,62 @@ const NewOrderScreen = () => {
               }}
             />
           </Box>
+
+          {/* Select de Usuario - Cliente Institucional para sellers, Vendedor para clientes */}
+          {currentUser && (
+            <Box mb={2}>
+              <FormControl fullWidth>
+                <InputLabel id="user-select-label">
+                  {currentUser.role === 'seller' ? 'Cliente Institucional' : 'Vendedor'}
+                </InputLabel>
+                <Select
+                  labelId="user-select-label"
+                  value={selectedUserId}
+                  label={currentUser.role === 'seller' ? 'Cliente Institucional' : 'Vendedor'}
+                  onChange={(e) => setSelectedUserId(e.target.value as number)}
+                  disabled={loadingUsers}
+                  sx={{
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>
+                      {currentUser.role === 'seller' 
+                        ? 'Seleccione un cliente' 
+                        : 'Seleccione un vendedor'}
+                    </em>
+                  </MenuItem>
+                  {(() => {
+                    console.log('Current role:', currentUser.role);
+                    console.log('Institutional customers count:', institutionalCustomers.length);
+                    console.log('Sellers count:', sellers.length);
+                    return currentUser.role === 'seller' 
+                      ? institutionalCustomers.map((customer) => (
+                          <MenuItem key={customer.id} value={customer.id}>
+                            {customer.institution_name} - {customer.username}
+                          </MenuItem>
+                        ))
+                      : sellers.map((seller) => {
+                          console.log('Rendering seller:', seller);
+                          return (
+                            <MenuItem key={seller.id} value={seller.id}>
+                              {seller.username}
+                              {seller.full_name ? ` - ${seller.full_name}` : ''}
+                            </MenuItem>
+                          );
+                        });
+                  })()}
+                </Select>
+                {loadingUsers && (
+                  <Box display="flex" justifyContent="center" mt={1}>
+                    <CircularProgress size={20} />
+                  </Box>
+                )}
+              </FormControl>
+            </Box>
+          )}
 
           {/* Lista de productos */}
           <Box mb={3}>
