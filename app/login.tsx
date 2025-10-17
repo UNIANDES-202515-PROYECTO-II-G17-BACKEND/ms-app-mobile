@@ -123,6 +123,7 @@ const LoginPage = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('username')}</Text>
             <TextInput
+              testID="input-Username"
               style={styles.input}
               value={username}
               onChangeText={setUsername}
@@ -135,6 +136,7 @@ const LoginPage = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('password')}</Text>
             <TextInput
+              testID="input-Password"
               style={styles.input}
               value={password}
               onChangeText={setPassword}
@@ -152,6 +154,7 @@ const LoginPage = () => {
           />
 
           <TouchableOpacity
+            testID="button-Login"
             style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={loading}
@@ -162,6 +165,7 @@ const LoginPage = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="button-Create Account"
             style={[styles.button, styles.secondaryButton]}
             onPress={() => router.push('/register')}
           >

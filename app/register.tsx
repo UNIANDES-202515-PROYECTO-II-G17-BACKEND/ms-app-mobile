@@ -51,6 +51,7 @@ export default function RegisterPage() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('institutionName')}</Text>
             <TextInput
+              testID="input-Institution Name"
               style={styles.input}
               value={formData.institutionName}
               onChangeText={(text) => setFormData({ ...formData, institutionName: text })}
@@ -62,6 +63,7 @@ export default function RegisterPage() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('nit')}</Text>
             <TextInput
+              testID="input-NIT"
               style={styles.input}
               value={formData.nit}
               onChangeText={(text) => setFormData({ ...formData, nit: text })}
@@ -73,6 +75,7 @@ export default function RegisterPage() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('phone')}</Text>
             <TextInput
+              testID="input-Phone"
               style={styles.input}
               value={formData.phone}
               onChangeText={(text) => setFormData({ ...formData, phone: text })}
@@ -85,6 +88,7 @@ export default function RegisterPage() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('email')}</Text>
             <TextInput
+              testID="input-Email"
               style={styles.input}
               value={formData.email}
               onChangeText={(text) => setFormData({ ...formData, email: text })}
@@ -98,6 +102,7 @@ export default function RegisterPage() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('username')}</Text>
             <TextInput
+              testID="input-Username"
               style={styles.input}
               value={formData.username}
               onChangeText={(text) => setFormData({ ...formData, username: text })}
@@ -110,6 +115,7 @@ export default function RegisterPage() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('password')}</Text>
             <TextInput
+              testID="input-Password"
               style={styles.input}
               value={formData.password}
               onChangeText={(text) => setFormData({ ...formData, password: text })}
@@ -127,6 +133,7 @@ export default function RegisterPage() {
           />
 
           <TouchableOpacity
+            testID="button-Register"
             style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={handleSubmit}
             disabled={loading}
@@ -137,6 +144,7 @@ export default function RegisterPage() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="button-Back to Login"
             style={[styles.button, styles.secondaryButton]}
             onPress={() => router.replace('/login')}
           >
@@ -146,7 +154,7 @@ export default function RegisterPage() {
           </TouchableOpacity>
 
           {error && (
-            <View style={styles.errorContainer}>
+            <View testID="error-box" style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
