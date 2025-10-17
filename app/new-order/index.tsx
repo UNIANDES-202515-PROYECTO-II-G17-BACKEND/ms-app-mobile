@@ -1,13 +1,25 @@
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, Button, Fab, IconButton, List, ListItem, ListItemText, TextField, ThemeProvider, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Fab, FormControl, IconButton, InputLabel, List, ListItem, ListItemText, MenuItem, Select, Snackbar, TextField, ThemeProvider, Typography } from '@mui/material';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import theme from '../common/theme';
 import { useOrder } from '../contexts/OrderContext';
-import { getAccessToken } from '../services/storageService';
-import { getCurrentUser } from '../services/userService';
+import { createOrder } from '../services/orderService';
+import { getCurrentUser, getInstitutionalCustomers, getSellers, InstitutionalCustomer, Seller, UserInfo } from '../services/userService';
+
+// Función auxiliar para obtener el país del storage
+const getCountryFromStorage = async (): Promise<string> => {
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const storedCountry = await AsyncStorage.getItem('user_country');
+    return storedCountry || 'mx'; // Por defecto 'mx'
+  } catch (error) {
+    console.error('Error getting country from storage:', error);
+    return 'mx'; // Por defecto 'mx' en caso de error
+  }
+};
 
 const NewOrderScreen = () => {
   const { t } = useTranslation();
@@ -15,6 +27,54 @@ const NewOrderScreen = () => {
   const { products, removeProduct, clearProducts } = useOrder();
   const [deliveryDate, setDeliveryDate] = useState('');
   const [orderObservations, setOrderObservations] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+  const [institutionalCustomers, setInstitutionalCustomers] = useState<InstitutionalCustomer[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userCountry, setUserCountry] = useState<string>('mx');
+
+  useEffect(() => {
+    loadUserAndRelatedUsers();
+  }, []);
+
+  const loadUserAndRelatedUsers = async () => {
+    try {
+      // Obtener el país del storage o usar 'mx' por defecto
+      const country = await getCountryFromStorage();
+      setUserCountry(country);
+      
+      const user = await getCurrentUser(country);
+      setCurrentUser(user);
+      console.log('Current user:', user);
+      console.log('Country:', country);
+
+      setLoadingUsers(true);
+      
+      if (user.role === 'seller') {
+        // Si el usuario es seller, cargar clientes institucionales
+        console.log('Loading institutional customers...');
+        const customers = await getInstitutionalCustomers(country, 100, 0);
+        console.log('Institutional customers loaded:', customers.length);
+        setInstitutionalCustomers(customers);
+      } else if (user.role === 'institutional_customer') {
+        // Si el usuario es cliente institucional, cargar sellers
+        console.log('Loading sellers...');
+        const sellersList = await getSellers(country, 100, 0);
+        console.log('Sellers loaded:', sellersList.length, sellersList);
+        setSellers(sellersList);
+      }
+      
+      setLoadingUsers(false);
+    } catch (err) {
+      console.error('Error loading user or related users:', err);
+      setError('Error al cargar la información del usuario');
+      setLoadingUsers(false);
+    }
+  };
 
   const handleCancel = () => {
     clearProducts();
@@ -23,52 +83,93 @@ const NewOrderScreen = () => {
 
   const handleSend = async () => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // Validar que haya productos en el pedido
+      if (products.length === 0) {
+        setError('Debe agregar al menos un producto al pedido');
+        setLoading(false);
+        return;
+      }
+
+      // Validar que todos los productos tengan bodega_id
+      const productsWithoutWarehouse = products.filter(p => !p.bodega_id);
+      if (productsWithoutWarehouse.length > 0) {
+        setError('Algunos productos no tienen bodega asignada');
+        setLoading(false);
+        return;
+      }
+
       // Obtener el usuario autenticado
-      const user = await getCurrentUser('co');
-      const token = await getAccessToken();
+      const user = currentUser || await getCurrentUser(userCountry);
 
-      // Estructura del payload que se enviaría al servicio
-      const orderPayload = {
-        usuario_id: user.id,
-        fecha_entrega: deliveryDate,
-        observaciones_generales: orderObservations,
-        productos: products.map(product => ({
+      // Validar que haya seleccionado un usuario (cliente o vendedor según el rol)
+      if (!selectedUserId) {
+        const userToSelectLabel = user.role === 'seller' ? 'un cliente institucional' : 'un vendedor';
+        setError(`Debe seleccionar ${userToSelectLabel}`);
+        setLoading(false);
+        return;
+      }
+
+      // Asignar cliente_id y vendedor_id según el rol del usuario
+      let clienteId: number;
+      let vendedorId: number;
+
+      if (user.role === 'institutional_customer') {
+        // Si es cliente institucional: cliente_id = user.id, vendedor_id = seller seleccionado
+        clienteId = parseInt(user.id, 10) || 12345;
+        vendedorId = selectedUserId;
+      } else if (user.role === 'seller') {
+        // Si es vendedor: cliente_id = cliente seleccionado, vendedor_id = user.id
+        clienteId = selectedUserId;
+        vendedorId = parseInt(user.id, 10) || 9001;
+      } else {
+        // Valores por defecto para otros roles
+        clienteId = 12345;
+        vendedorId = 9001;
+      }
+
+      // Usar la bodega del primer producto (todas deberían ser la misma en este caso)
+      const bodegaOrigenId = products[0].bodega_id!;
+
+      // Preparar los items del pedido
+      const items = products.map(product => ({
         producto_id: product.id,
-        sku: product.sku,
-        nombre: product.nombre,
         cantidad: product.cantidad,
-        observaciones: product.observaciones || null
-      })),
-      total_productos: products.length,
-      cantidad_total: products.reduce((sum, p) => sum + p.cantidad, 0)
-    };
+        precio_unitario: product.precio_unitario || 0,
+        impuesto_pct: product.impuesto_pct || 19,
+        sku: product.sku
+      }));
 
-    console.log('==============================================');
-    console.log('📦 DATOS QUE SE ENVIARÍAN AL SERVICIO DE PEDIDOS:');
-    console.log('==============================================');
-    console.log(`Usuario ID: ${user.id}`);
-    console.log(`Usuario: ${user.username}`);
-    console.log(`Token: ${token?.substring(0, 20)}...`);
-    console.log('==============================================');
-    console.log(JSON.stringify(orderPayload, null, 2));
-    console.log('==============================================');
-    console.log('Resumen:');
-    console.log(`- Usuario ID: ${user.id}`);
-    console.log(`- Fecha de entrega: ${deliveryDate || 'No especificada'}`);
-    console.log(`- Total de productos: ${products.length}`);
-    console.log(`- Cantidad total de items: ${orderPayload.cantidad_total}`);
-    console.log(`- Observaciones: ${orderObservations || 'Ninguna'}`);
-    console.log('==============================================');
-    
-    // TODO: Implementar llamada al servicio de creación de pedido
-    // const response = await orderService.createOrder(orderPayload, token);
-    
-    // Limpiar productos después de enviar
-    clearProducts();
-    router.push('/');
-    } catch (error) {
-      console.error('Error al preparar el pedido:', error);
-      // TODO: Mostrar mensaje de error al usuario
+      // Crear el payload del pedido
+      const orderPayload = {
+        tipo: 'VENTA',
+        cliente_id: clienteId,
+        vendedor_id: vendedorId,
+        bodega_origen_id: bodegaOrigenId,
+        items: items,
+        observaciones: orderObservations || undefined,
+      };
+
+      // Llamar al servicio de creación de pedido
+      const response = await createOrder(orderPayload, userCountry);
+
+      // Mostrar mensaje de éxito
+      setSuccessMessage('Pedido creado exitosamente');
+
+      // Limpiar productos después de enviar
+      clearProducts();
+      
+      // Redirigir después de un breve delay para mostrar el mensaje
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } catch (err) {
+      console.error('Error al crear el pedido:', err);
+      setError(err instanceof Error ? err.message : 'Error al crear el pedido');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,6 +202,62 @@ const NewOrderScreen = () => {
               }}
             />
           </Box>
+
+          {/* Select de Usuario - Cliente Institucional para sellers, Vendedor para clientes */}
+          {currentUser && (
+            <Box mb={2}>
+              <FormControl fullWidth>
+                <InputLabel id="user-select-label">
+                  {currentUser.role === 'seller' ? 'Cliente Institucional' : 'Vendedor'}
+                </InputLabel>
+                <Select
+                  labelId="user-select-label"
+                  value={selectedUserId}
+                  label={currentUser.role === 'seller' ? 'Cliente Institucional' : 'Vendedor'}
+                  onChange={(e) => setSelectedUserId(e.target.value as number)}
+                  disabled={loadingUsers}
+                  sx={{
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>
+                      {currentUser.role === 'seller' 
+                        ? 'Seleccione un cliente' 
+                        : 'Seleccione un vendedor'}
+                    </em>
+                  </MenuItem>
+                  {(() => {
+                    console.log('Current role:', currentUser.role);
+                    console.log('Institutional customers count:', institutionalCustomers.length);
+                    console.log('Sellers count:', sellers.length);
+                    return currentUser.role === 'seller' 
+                      ? institutionalCustomers.map((customer) => (
+                          <MenuItem key={customer.id} value={customer.id}>
+                            {customer.institution_name} - {customer.username}
+                          </MenuItem>
+                        ))
+                      : sellers.map((seller) => {
+                          console.log('Rendering seller:', seller);
+                          return (
+                            <MenuItem key={seller.id} value={seller.id}>
+                              {seller.username}
+                              {seller.full_name ? ` - ${seller.full_name}` : ''}
+                            </MenuItem>
+                          );
+                        });
+                  })()}
+                </Select>
+                {loadingUsers && (
+                  <Box display="flex" justifyContent="center" mt={1}>
+                    <CircularProgress size={20} />
+                  </Box>
+                )}
+              </FormControl>
+            </Box>
+          )}
 
           {/* Lista de productos */}
           <Box mb={3}>
@@ -193,6 +350,7 @@ const NewOrderScreen = () => {
             fullWidth
             variant="outlined"
             onClick={handleCancel}
+            disabled={loading}
             sx={{
               borderColor: 'primary.main',
               color: 'primary.main',
@@ -206,6 +364,7 @@ const NewOrderScreen = () => {
             fullWidth
             variant="contained"
             onClick={handleSend}
+            disabled={loading || products.length === 0}
             sx={{
               bgcolor: 'primary.main',
               color: 'white',
@@ -214,11 +373,39 @@ const NewOrderScreen = () => {
               '&:hover': {
                 bgcolor: 'primary.dark',
               },
+              '&:disabled': {
+                bgcolor: 'grey.300',
+                color: 'grey.500',
+              },
             }}
           >
-            {t('send')}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('send')}
           </Button>
         </Box>
+
+        {/* Snackbar para errores */}
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+            {error}
+          </Alert>
+        </Snackbar>
+
+        {/* Snackbar para éxito */}
+        <Snackbar
+          open={!!successMessage}
+          autoHideDuration={3000}
+          onClose={() => setSuccessMessage(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+            {successMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </ThemeProvider>
   );

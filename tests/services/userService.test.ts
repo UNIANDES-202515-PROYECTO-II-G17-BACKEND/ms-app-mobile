@@ -1,5 +1,5 @@
 import { getAccessToken } from '../../app/services/storageService';
-import { clearUserCache, getCurrentUser, hasRole, type UserInfo } from '../../app/services/userService';
+import { clearUserCache, getCurrentUser, getInstitutionalCustomers, getSellers, hasRole, type UserInfo } from '../../app/services/userService';
 
 // Mock fetch
 const mockFetch = jest.fn();
@@ -273,6 +273,106 @@ describe('userService', () => {
       // La siguiente llamada debería hacer fetch nuevamente
       await getCurrentUser('co');
       expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('getInstitutionalCustomers', () => {
+    it('should fetch institutional customers successfully', async () => {
+      const mockCustomers = [
+        {
+          id: 1,
+          username: 'customer1',
+          role: 'institutional_customer' as const,
+          institution_name: 'Hospital A',
+          full_name: null,
+          document_type: null,
+          document_number: null,
+          email: null,
+          telephone: null,
+          created_at: '2025-01-01T00:00:00Z',
+          updated_at: null,
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockCustomers),
+      });
+
+      const result = await getInstitutionalCustomers('mx', 50, 0);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1/usuarios?role=institutional_customer&limit=50&offset=0',
+        {
+          method: 'GET',
+          headers: {
+            'X-Country': 'mx',
+          },
+        }
+      );
+      expect(result).toEqual(mockCustomers);
+    });
+
+    it('should handle errors when fetching institutional customers', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve('Internal Server Error'),
+      });
+
+      await expect(getInstitutionalCustomers('mx', 50, 0))
+        .rejects
+        .toThrow('Failed to fetch institutional customers: 500 Internal Server Error');
+    });
+  });
+
+  describe('getSellers', () => {
+    it('should fetch sellers successfully', async () => {
+      const mockSellers = [
+        {
+          id: 10,
+          username: 'seller1',
+          role: 'seller' as const,
+          institution_name: 'Company A',
+          full_name: 'Jane Smith',
+          document_type: 'CC',
+          document_number: '987654321',
+          email: 'jane@company.com',
+          telephone: '555-0200',
+          created_at: '2025-01-01T00:00:00Z',
+          updated_at: null,
+        },
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSellers),
+      });
+
+      const result = await getSellers('co', 100, 10);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1/usuarios?role=seller&limit=100&offset=10',
+        {
+          method: 'GET',
+          headers: {
+            'X-Country': 'co',
+          },
+        }
+      );
+      expect(result).toEqual(mockSellers);
+    });
+
+    it('should handle errors when fetching sellers', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        text: () => Promise.resolve('Forbidden'),
+      });
+
+      await expect(getSellers('co', 50, 0))
+        .rejects
+        .toThrow('Failed to fetch sellers: 403 Forbidden');
     });
   });
 
