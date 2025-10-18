@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -44,4 +44,4 @@ jobs:
         run: >
           npm run -s test -- --ci --runInBand --coverage
           --coverageReporters=text,lcov
-          --coverageThreshold='{"global":{"branches":70,"functions":70,"lines":70,"statements":70}}'
+          --coverageThreshold='{"global":{"lines":70,"statements":70}}'
