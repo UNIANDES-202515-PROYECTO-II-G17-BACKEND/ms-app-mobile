@@ -15,7 +15,8 @@ const HomeScreen = () => {
         <Image 
           source={require('../assets/images/logo.png')} 
           style={styles.logo}
-        />        <Text style={styles.subtitle}>
+        />
+        <Text style={styles.subtitle}>
           {t('welcome')} <Text style={{ fontWeight: 'bold' }}>{t('appName')}</Text>!
         </Text>
         <Text style={styles.subtitle}>{t('welcomeMessage')}</Text>
