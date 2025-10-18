@@ -45,7 +45,8 @@ const AddProductScreen = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await getAllProducts('co', 100, 0);
+      // Ya no necesitamos pasar el país manualmente
+      const data = await getAllProducts();
       setProducts(data);
       setError(null);
     } catch (err) {
@@ -59,9 +60,10 @@ const AddProductScreen = () => {
   const loadProductDetail = async (productId: string) => {
     try {
       setLoadingDetail(true);
+      // Ya no necesitamos pasar el país manualmente
       const [detail, locations] = await Promise.all([
-        getProductDetail(productId, 'co'),
-        getProductLocations(productId, 'co')
+        getProductDetail(productId),
+        getProductLocations(productId)
       ]);
       setProductDetail(detail);
       setProductLocations(locations);

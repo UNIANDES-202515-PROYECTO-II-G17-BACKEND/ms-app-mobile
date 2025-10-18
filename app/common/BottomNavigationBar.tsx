@@ -6,7 +6,7 @@ import { UserRole } from '../services/userService';
 
 // Iconos simples usando emojis o texto (puedes reemplazar con react-native-vector-icons si lo prefieres)
 const HomeIcon = () => <Text style={styles.icon}>🏠</Text>;
-const ShoppingCartIcon = () => <Text style={styles.icon}>🛒</Text>;
+const OrdersIcon = () => <Text style={styles.icon}>🧾</Text>;
 const GroupIcon = () => <Text style={styles.icon}>👥</Text>;
 const MapIcon = () => <Text style={styles.icon}>🗺️</Text>;
 const LocalShippingIcon = () => <Text style={styles.icon}>🚚</Text>;
@@ -36,7 +36,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/home');
           break;
         case 1:
-          router.push('/new-order' as any);
+          router.push('/orders');
           break;
         case 2:
           // router.push('/clients'); // TODO: Crear pantalla de clientes
@@ -55,7 +55,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/home');
           break;
         case 1:
-          router.push('/new-order' as any);
+          router.push('/orders');
           break;
         case 2:
           // router.push('/deliveries'); // TODO: Crear pantalla de entregas
@@ -71,7 +71,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/home');
           break;
         case 1:
-          router.push('/new-order' as any);
+          router.push('/orders');
           break;
         case 2:
           // router.push('/deliveries');
@@ -100,13 +100,13 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           style={[styles.tab, value === 1 && styles.activeTab]}
           onPress={() => handleNavigation(1)}
         >
-          <ShoppingCartIcon />
+          <OrdersIcon />
           <Text style={[styles.label, value === 1 && styles.activeLabel]}>
             {t('orders')}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.tab, value === 2 && styles.activeTab]}
           onPress={() => handleNavigation(2)}
         >
@@ -114,9 +114,9 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           <Text style={[styles.label, value === 2 && styles.activeLabel]}>
             {t('clients')}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.tab, value === 3 && styles.activeTab]}
           onPress={() => handleNavigation(3)}
         >
@@ -124,7 +124,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           <Text style={[styles.label, value === 3 && styles.activeLabel]}>
             {t('routes')}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={[styles.tab, value === 4 && styles.activeTab]}
@@ -156,13 +156,13 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         style={[styles.tab, value === 1 && styles.activeTab]}
         onPress={() => handleNavigation(1)}
       >
-        <ShoppingCartIcon />
+        <OrdersIcon />
         <Text style={[styles.label, value === 1 && styles.activeLabel]}>
           {t('orders')}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={[styles.tab, value === 2 && styles.activeTab]}
         onPress={() => handleNavigation(2)}
       >
@@ -170,7 +170,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         <Text style={[styles.label, value === 2 && styles.activeLabel]}>
           {t('deliveries')}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <TouchableOpacity
         style={[styles.tab, value === 3 && styles.activeTab]}

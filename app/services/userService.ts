@@ -50,7 +50,7 @@ const BASE_URL = 'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1';
 
 let cachedUserInfo: UserInfo | null = null;
 
-export const getCurrentUser = async (country: string): Promise<UserInfo> => {
+export const getCurrentUser = async (country?: string): Promise<UserInfo> => {
   // Si tenemos la información en caché y no está expirada, la retornamos
   if (cachedUserInfo && cachedUserInfo.exp * 1000 > Date.now()) {
     return cachedUserInfo;
@@ -61,11 +61,14 @@ export const getCurrentUser = async (country: string): Promise<UserInfo> => {
     throw new Error('No authentication token found');
   }
 
+  // Si no se proporciona el país, obtenerlo del storage
+  const userCountry = country || await getUserCountry();
+
   const resp = await fetch(`${BASE_URL}/usuarios/me`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
-      'X-Country': country,
+      'X-Country': userCountry,
     },
   });
 
@@ -79,7 +82,7 @@ export const getCurrentUser = async (country: string): Promise<UserInfo> => {
   return userInfo;
 };
 
-import { getAccessToken } from './storageService';
+import { getAccessToken, getUserCountry } from './storageService';
 
 const getStoredToken = async (): Promise<string | null> => {
   try {
@@ -93,7 +96,7 @@ export const clearUserCache = () => {
   cachedUserInfo = null;
 };
 
-export const hasRole = async (requiredRole: UserRole, country: string = 'mx'): Promise<boolean> => {
+export const hasRole = async (requiredRole: UserRole, country?: string): Promise<boolean> => {
   try {
     const user = await getCurrentUser(country);
     return user.role === requiredRole;
@@ -103,16 +106,18 @@ export const hasRole = async (requiredRole: UserRole, country: string = 'mx'): P
 };
 
 export const getInstitutionalCustomers = async (
-  country: string,
+  country?: string,
   limit: number = 50,
   offset: number = 0
 ): Promise<InstitutionalCustomer[]> => {
+  const userCountry = country || await getUserCountry();
+  
   const response = await fetch(
     `${BASE_URL}/usuarios?role=institutional_customer&limit=${limit}&offset=${offset}`,
     {
       method: 'GET',
       headers: {
-        'X-Country': country,
+        'X-Country': userCountry,
       },
     }
   );
@@ -127,16 +132,18 @@ export const getInstitutionalCustomers = async (
 };
 
 export const getSellers = async (
-  country: string,
+  country?: string,
   limit: number = 50,
   offset: number = 0
 ): Promise<Seller[]> => {
+  const userCountry = country || await getUserCountry();
+  
   const response = await fetch(
     `${BASE_URL}/usuarios?role=seller&limit=${limit}&offset=${offset}`,
     {
       method: 'GET',
       headers: {
-        'X-Country': country,
+        'X-Country': userCountry,
       },
     }
   );

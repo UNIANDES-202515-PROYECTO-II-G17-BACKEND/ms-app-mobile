@@ -39,6 +39,12 @@ export default function RootLayout() {
           headerShown: false 
         }} 
       />
+      <Stack.Screen
+        name="orders"
+        options={{
+          headerShown: false
+        }}
+      />
     </Stack>
   );
 }
