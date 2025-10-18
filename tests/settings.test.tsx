@@ -1,5 +1,4 @@
 // tests/settings.test.tsx
-import React from 'react';
 
 // Test deshabilitado temporalmente debido a problemas con expo-router en el entorno de test
 // El componente settings.tsx usa expo-router que no es compatible con Jest sin configuración adicional

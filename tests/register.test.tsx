@@ -1,5 +1,5 @@
 // tests/register.test.tsx
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 
 // ---- Mocks ----
@@ -94,7 +94,6 @@ jest.mock('react-i18next', () => ({
 
 // Import the component after mocks
 import RegisterPage from '../app/register';
-import { register } from '../app/services/authService';
 
 describe('RegisterPage', () => {
   beforeEach(() => {
