@@ -1,5 +1,5 @@
 // tests/login.test.tsx
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 
 // ---- Mocks (deben evaluarse antes de importar el componente) ----
