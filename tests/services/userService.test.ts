@@ -237,10 +237,10 @@ describe('userService', () => {
       const mockToken = 'test-access-token';
       mockGetAccessToken.mockResolvedValue(mockToken);
 
-      const roles: Array<{ role: 'institutional_customer' | 'admin' | 'provider', expected: boolean }> = [
+      const roles: Array<{ role: 'institutional_customer' | 'admin' | 'seller', expected: boolean }> = [
         { role: 'institutional_customer', expected: true },
         { role: 'admin', expected: false },
-        { role: 'provider', expected: false },
+        { role: 'seller', expected: false },
       ];
 
       for (const { role, expected } of roles) {
