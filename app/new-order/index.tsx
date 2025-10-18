@@ -16,18 +16,6 @@ import { useOrder } from '../contexts/OrderContext';
 import { createOrder } from '../services/orderService';
 import { getCurrentUser, getInstitutionalCustomers, getSellers, InstitutionalCustomer, Seller, UserInfo } from '../services/userService';
 
-// Función auxiliar para obtener el país del storage
-const getCountryFromStorage = async (): Promise<string> => {
-  try {
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-    const storedCountry = await AsyncStorage.getItem('user_country');
-    return storedCountry || 'mx'; // Por defecto 'mx'
-  } catch (error) {
-    console.error('Error getting country from storage:', error);
-    return 'mx'; // Por defecto 'mx' en caso de error
-  }
-};
-
 // Custom Alert Component to replace Snackbar
 interface CustomAlertProps {
   visible: boolean;
@@ -171,7 +159,6 @@ const NewOrderScreen = () => {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [userCountry, setUserCountry] = useState<string>('mx');
 
   useEffect(() => {
     loadUserAndRelatedUsers();
@@ -179,27 +166,23 @@ const NewOrderScreen = () => {
 
   const loadUserAndRelatedUsers = async () => {
     try {
-      // Obtener el país del storage o usar 'mx' por defecto
-      const country = await getCountryFromStorage();
-      setUserCountry(country);
-      
-      const user = await getCurrentUser(country);
+      // Ya no necesitamos obtener el país manualmente
+      const user = await getCurrentUser();
       setCurrentUser(user);
       console.log('Current user:', user);
-      console.log('Country:', country);
 
       setLoadingUsers(true);
       
       if (user.role === 'seller') {
         // Si el usuario es seller, cargar clientes institucionales
         console.log('Loading institutional customers...');
-        const customers = await getInstitutionalCustomers(country, 100, 0);
+        const customers = await getInstitutionalCustomers();
         console.log('Institutional customers loaded:', customers.length);
         setInstitutionalCustomers(customers);
       } else if (user.role === 'institutional_customer') {
         // Si el usuario es cliente institucional, cargar sellers
         console.log('Loading sellers...');
-        const sellersList = await getSellers(country, 100, 0);
+        const sellersList = await getSellers();
         console.log('Sellers loaded:', sellersList.length, sellersList);
         setSellers(sellersList);
       }
@@ -238,7 +221,7 @@ const NewOrderScreen = () => {
       }
 
       // Obtener el usuario autenticado
-      const user = currentUser || await getCurrentUser(userCountry);
+      const user = currentUser || await getCurrentUser();
 
       // Validar que haya seleccionado un usuario (cliente o vendedor según el rol)
       if (!selectedUserId) {
@@ -288,8 +271,8 @@ const NewOrderScreen = () => {
         observaciones: orderObservations || undefined,
       };
 
-      // Llamar al servicio de creación de pedido
-      const response = await createOrder(orderPayload, userCountry);
+      // Llamar al servicio de creación de pedido (ya no necesitamos pasar el país)
+      const response = await createOrder(orderPayload);
 
       // Mostrar mensaje de éxito
       setSuccessMessage('Pedido creado exitosamente');

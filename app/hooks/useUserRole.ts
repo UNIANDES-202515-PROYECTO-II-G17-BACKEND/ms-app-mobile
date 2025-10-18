@@ -10,7 +10,8 @@ export const useUserRole = (defaultRole: UserRole = 'institutional_customer') =>
     const loadUserRole = async () => {
       try {
         setLoading(true);
-        const user = await getCurrentUser('co'); // Default country
+        // Ya no necesitamos pasar el país, se obtiene automáticamente
+        const user = await getCurrentUser();
         setUserRole(user.role);
         setError(null);
       } catch (err) {

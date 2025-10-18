@@ -19,6 +19,7 @@ jest.mock('../app/services/authService', () => ({
 // Mock storageService
 jest.mock('../app/services/storageService', () => ({
   saveAuth: jest.fn(),
+  saveUserCountry: jest.fn(),
 }));
 
 // Asset del logo
@@ -76,12 +77,20 @@ jest.mock('react-i18next', () => ({
 import LoginPage from '../app/login';
 
 import { login } from '../app/services/authService';
-import { saveAuth } from '../app/services/storageService';
+import { saveAuth, saveUserCountry } from '../app/services/storageService';
 
 describe('LoginPage', () => {
+  const mockRouter = {
+    replace: jest.fn(),
+  };
+
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
+    // Reset router mock
+    mockRouter.replace.mockClear();
+    // Override useRouter to return our controlled mock
+    jest.spyOn(require('expo-router'), 'useRouter').mockReturnValue(mockRouter);
   });
 
   it('renderiza los campos del formulario y maneja cambios', async () => {
@@ -113,6 +122,7 @@ describe('LoginPage', () => {
     // Mock de servicios
     (login as jest.Mock).mockResolvedValueOnce(mockLoginResponse);
     (saveAuth as jest.Mock).mockResolvedValueOnce(undefined);
+    (saveUserCountry as jest.Mock).mockResolvedValueOnce(undefined);
 
     const { getByTestId, getByText } = render(<LoginPage />);
 
@@ -130,6 +140,7 @@ describe('LoginPage', () => {
     // Verificar que se llamaron los servicios con los valores correctos
     expect(login).toHaveBeenCalledWith('testuser', 'testpass', 'mx');
     expect(saveAuth).toHaveBeenCalledWith(mockLoginResponse);
+    expect(saveUserCountry).toHaveBeenCalledWith('mx');
     expect(mockRouter.replace).toHaveBeenCalledWith('/home');
   });
 

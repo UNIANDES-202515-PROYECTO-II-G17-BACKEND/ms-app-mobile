@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CountryCode, login as loginRequest } from './services/authService';
-import { saveAuth } from './services/storageService';
+import { saveAuth, saveUserCountry } from './services/storageService';
 
 // Custom Select Component
 interface SelectOption {
@@ -104,6 +104,7 @@ const LoginPage = () => {
     try {
       const resp = await loginRequest(username, password, country);
       await saveAuth(resp);
+      await saveUserCountry(country);
       router.replace('/home');
     } catch (e: any) {
       setError(e?.message ?? 'Login failed');

@@ -34,11 +34,15 @@ export interface ProductLocation {
 
 const BASE_URL = 'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1';
 
-export const getAllProducts = async (country: string, limit: number = 100, offset: number = 0): Promise<Product[]> => {
+import { getUserCountry } from './storageService';
+
+export const getAllProducts = async (country?: string, limit: number = 100, offset: number = 0): Promise<Product[]> => {
+  const userCountry = country || await getUserCountry();
+  
   const response = await fetch(`${BASE_URL}/inventario/productos/todos?limit=${limit}&offset=${offset}`, {
     method: 'GET',
     headers: {
-      'X-Country': country,
+      'X-Country': userCountry,
     },
   });
 
@@ -50,11 +54,13 @@ export const getAllProducts = async (country: string, limit: number = 100, offse
   return await response.json();
 };
 
-export const getProductDetail = async (productId: string, country: string): Promise<ProductDetail> => {
+export const getProductDetail = async (productId: string, country?: string): Promise<ProductDetail> => {
+  const userCountry = country || await getUserCountry();
+  
   const response = await fetch(`${BASE_URL}/inventario/producto/${productId}/detalle`, {
     method: 'GET',
     headers: {
-      'X-Country': country,
+      'X-Country': userCountry,
     },
   });
 
@@ -66,11 +72,13 @@ export const getProductDetail = async (productId: string, country: string): Prom
   return await response.json();
 };
 
-export const getProductLocations = async (productId: string, country: string): Promise<ProductLocation[]> => {
+export const getProductLocations = async (productId: string, country?: string): Promise<ProductLocation[]> => {
+  const userCountry = country || await getUserCountry();
+  
   const response = await fetch(`${BASE_URL}/inventario/producto/${productId}/ubicaciones`, {
     method: 'GET',
     headers: {
-      'X-Country': country,
+      'X-Country': userCountry,
     },
   });
 

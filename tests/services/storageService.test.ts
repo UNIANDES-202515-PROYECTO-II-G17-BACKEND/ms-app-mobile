@@ -1,10 +1,11 @@
-import { clearAuth, getAccessToken, getAuth, saveAuth } from '../../app/services/storageService';
+import { clearAuth, getAccessToken, getAuth, getUserCountry, saveAuth, saveUserCountry } from '../../app/services/storageService';
 
 // Mock the module factory
 const mockMultiSet = jest.fn();
 const mockMultiRemove = jest.fn();
 const mockGetItem = jest.fn();
 const mockMultiGet = jest.fn();
+const mockSetItem = jest.fn();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -13,6 +14,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     multiRemove: mockMultiRemove,
     getItem: mockGetItem,
     multiGet: mockMultiGet,
+    setItem: mockSetItem,
   },
 }));
 
@@ -23,12 +25,14 @@ describe('storageService', () => {
     mockMultiRemove.mockReset();
     mockGetItem.mockReset();
     mockMultiGet.mockReset();
+    mockSetItem.mockReset();
 
     // Default success responses
     mockMultiSet.mockResolvedValue(undefined);
     mockMultiRemove.mockResolvedValue(undefined);
     mockGetItem.mockResolvedValue(null);
     mockMultiGet.mockResolvedValue([]);
+    mockSetItem.mockResolvedValue(undefined);
   });
 
   describe('saveAuth', () => {
@@ -73,7 +77,8 @@ describe('storageService', () => {
       expect(mockMultiRemove).toHaveBeenCalledWith([
         'access_token',
         'refresh_token',
-        'expires_at'
+        'expires_at',
+        'user_country'
       ]);
     });
 
@@ -189,6 +194,55 @@ describe('storageService', () => {
       const result = await getAuth();
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('saveUserCountry', () => {
+    it('should save country to AsyncStorage', async () => {
+      await saveUserCountry('mx' as any);
+
+      expect(mockSetItem).toHaveBeenCalledWith('user_country', 'mx');
+    });
+
+    it('should handle AsyncStorage errors gracefully', async () => {
+      const mockError = new Error('Storage error');
+      mockSetItem.mockRejectedValue(mockError);
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      await saveUserCountry('co' as any);
+
+      expect(consoleSpy).toHaveBeenCalledWith('Failed saving user country', mockError);
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('getUserCountry', () => {
+    it('should return country from AsyncStorage', async () => {
+      mockGetItem.mockResolvedValue('mx');
+
+      const result = await getUserCountry();
+
+      expect(mockGetItem).toHaveBeenCalledWith('user_country');
+      expect(result).toBe('mx');
+    });
+
+    it('should return default country "co" when country not found', async () => {
+      mockGetItem.mockResolvedValue(null);
+
+      const result = await getUserCountry();
+
+      expect(result).toBe('co');
+    });
+
+    it('should return default country "co" on AsyncStorage error', async () => {
+      mockGetItem.mockRejectedValue(new Error('Storage error'));
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const result = await getUserCountry();
+
+      expect(consoleSpy).toHaveBeenCalledWith('Failed getting user country', expect.any(Error));
+      expect(result).toBe('co');
+      consoleSpy.mockRestore();
     });
   });
 });

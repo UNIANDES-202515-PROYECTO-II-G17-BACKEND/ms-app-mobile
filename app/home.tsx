@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import BottomNavigationBar from './common/BottomNavigationBar';
 import { useUserRole } from './hooks/useUserRole';
 
@@ -12,12 +12,13 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>
-          {t('home')}
+        <Image 
+          source={require('../assets/images/logo.png')} 
+          style={styles.logo}
+        />        <Text style={styles.subtitle}>
+          {t('welcome')} <Text style={{ fontWeight: 'bold' }}>{t('appName')}</Text>!
         </Text>
-        <Text style={styles.subtitle}>
-          Bienvenido
-        </Text>
+        <Text style={styles.subtitle}>{t('welcomeMessage')}</Text>
       </View>
       <BottomNavigationBar value={value} setValue={setValue} role={userRole} />
     </View>
@@ -34,6 +35,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+  },
+  logo: {
+    width: 180,
+    height: 180,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

@@ -1,4 +1,4 @@
-import { getAccessToken } from '../../app/services/storageService';
+import { getAccessToken, getUserCountry } from '../../app/services/storageService';
 import { clearUserCache, getCurrentUser, getInstitutionalCustomers, getSellers, hasRole, type UserInfo } from '../../app/services/userService';
 
 // Mock fetch
@@ -8,9 +8,11 @@ global.fetch = mockFetch as unknown as typeof fetch;
 // Mock storageService
 jest.mock('../../app/services/storageService', () => ({
   getAccessToken: jest.fn(),
+  getUserCountry: jest.fn(),
 }));
 
 const mockGetAccessToken = getAccessToken as jest.MockedFunction<typeof getAccessToken>;
+const mockGetUserCountry = getUserCountry as jest.MockedFunction<typeof getUserCountry>;
 
 describe('userService', () => {
   const mockUserInfo: UserInfo = {
@@ -196,9 +198,10 @@ describe('userService', () => {
       expect(result).toBe(false);
     });
 
-    it('should use mx as default country', async () => {
+    it('should use country from storage when not provided', async () => {
       const mockToken = 'test-access-token';
       mockGetAccessToken.mockResolvedValue(mockToken);
+      mockGetUserCountry.mockResolvedValue('co' as any); // Mock country from storage
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockUserInfo),
@@ -210,7 +213,7 @@ describe('userService', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'X-Country': 'mx'
+            'X-Country': 'co'
           })
         })
       );
