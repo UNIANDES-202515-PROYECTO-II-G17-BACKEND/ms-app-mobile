@@ -60,6 +60,16 @@ const resources = {
       viewOrders: 'View Orders',
       createOrder: 'Create New Order',
       manageInventory: 'Manage Inventory',
+      // Clients screen
+      searchClients: 'Search clients...',
+      noClients: 'No Clients',
+      noClientsMessage: 'No clients found',
+      noClientsFilter: 'No clients found with this search',
+      institution: 'Institution',
+      contact: 'Contact',
+      clientId: 'Client ID',
+      registeredDate: 'Registered',
+      lastUpdate: 'Last Update',
     },
   },
   es: {
@@ -118,6 +128,16 @@ const resources = {
       viewOrders: 'Ver Pedidos',
       createOrder: 'Crear Nuevo Pedido',
       manageInventory: 'Gestionar Inventario',
+      // Clients screen
+      searchClients: 'Buscar clientes...',
+      noClients: 'No hay clientes',
+      noClientsMessage: 'No se encontraron clientes',
+      noClientsFilter: 'No se encontraron clientes con esta búsqueda',
+      institution: 'Institución',
+      contact: 'Contacto',
+      clientId: 'ID Cliente',
+      registeredDate: 'Registrado',
+      lastUpdate: 'Última actualización',
     },
   },
 };
