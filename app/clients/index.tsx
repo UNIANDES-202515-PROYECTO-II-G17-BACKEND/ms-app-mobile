@@ -152,7 +152,7 @@ const ClientsScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6750A4" />
+        <ActivityIndicator size="large" color="#6750A4" testID="loading-indicator" />
       </View>
     );
   }
@@ -210,6 +210,7 @@ const ClientsScreen = () => {
 
       {/* Lista de clientes */}
       <FlatList
+        testID="clients-list"
         data={filteredClients}
         renderItem={renderClientItem}
         keyExtractor={(item) => item.id.toString()}
