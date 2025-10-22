@@ -48,6 +48,7 @@ export interface Order {
   items: OrderItem[];
   fecha_creacion?: string;
   fecha_actualizacion?: string;
+  direccion?: string;
 }
 
 export interface GetOrdersParams {
