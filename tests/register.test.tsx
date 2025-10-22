@@ -1,5 +1,5 @@
 // tests/register.test.tsx
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 // ---- Mocks ----
@@ -83,6 +83,8 @@ jest.mock('react-i18next', () => ({
         nit: 'NIT',
         phone: 'Phone',
         email: 'Email',
+        address: 'Address',
+        city: 'City',
         username: 'Username',
         password: 'Password',
         country: 'Country',
@@ -108,6 +110,8 @@ describe('RegisterPage', () => {
     expect(getByText('NIT')).toBeTruthy();
     expect(getByText('Phone')).toBeTruthy();
     expect(getByText('Email')).toBeTruthy();
+    expect(getByText('Address')).toBeTruthy();
+    expect(getByText('City')).toBeTruthy();
     expect(getByText('Username')).toBeTruthy();
     expect(getByText('Password')).toBeTruthy();
     expect(getByText('Country')).toBeTruthy();
@@ -126,6 +130,8 @@ describe('RegisterPage', () => {
       fireEvent.changeText(getByTestId('input-NIT'), '123456789');
       fireEvent.changeText(getByTestId('input-Phone'), '1234567890');
       fireEvent.changeText(getByTestId('input-Email'), 'test@hospital.com');
+      fireEvent.changeText(getByTestId('input-Address'), '123 Main St');
+      fireEvent.changeText(getByTestId('input-City'), 'Test City');
       fireEvent.changeText(getByTestId('input-Username'), 'testuser');
       fireEvent.changeText(getByTestId('input-Password'), 'testpass');
       // Country select usa Modal y no se puede testear fácilmente sin mocks adicionales
@@ -133,6 +139,8 @@ describe('RegisterPage', () => {
 
     // Verificar que los campos existen y son accesibles
     expect(getByTestId('input-Institution Name')).toBeTruthy();
+    expect(getByTestId('input-Address')).toBeTruthy();
+    expect(getByTestId('input-City')).toBeTruthy();
     expect(getByTestId('input-Username')).toBeTruthy();
     expect(getByTestId('input-Password')).toBeTruthy();
   });
@@ -144,13 +152,19 @@ describe('RegisterPage', () => {
 
     // Fill out the form
     await act(async () => {
-      fireEvent.changeText(getByTestId('input-Institution Name'), 'Test Hospital');
-    });
-    await act(async () => {
       fireEvent.changeText(getByTestId('input-Username'), 'testuser');
     });
     await act(async () => {
       fireEvent.changeText(getByTestId('input-Password'), 'testpass');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Institution Name'), 'Test Hospital');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Address'), '123 Main St');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-City'), 'Test City');
     });
 
     // Submit the form
@@ -164,6 +178,8 @@ describe('RegisterPage', () => {
         username: 'testuser',
         password: 'testpass',
         institution_name: 'Test Hospital',
+        address: '123 Main St',
+        city: 'Test City',
       }),
       'mx'
     );
@@ -204,5 +220,163 @@ describe('RegisterPage', () => {
     });
 
     expect(mockReplace).toHaveBeenCalledWith('/login');
+  });
+
+  it('handles registration with all optional fields', async () => {
+    mockRegister.mockResolvedValueOnce({});
+    
+    const { getByTestId } = render(<RegisterPage />);
+
+    // Fill out all fields including optional ones
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Username'), 'testuser');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Password'), 'testpass');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Institution Name'), 'Test Hospital');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-NIT'), '123456789');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Phone'), '1234567890');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Email'), 'test@hospital.com');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Address'), '123 Main St');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-City'), 'Test City');
+    });
+
+    // Submit the form
+    await act(async () => {
+      fireEvent.press(getByTestId('button-Register'));
+    });
+
+    // Verify registration was called with all fields
+    expect(mockRegister).toHaveBeenCalledWith(
+      expect.objectContaining({
+        username: 'testuser',
+        password: 'testpass',
+        institution_name: 'Test Hospital',
+        address: '123 Main St',
+        city: 'Test City',
+      }),
+      'mx'
+    );
+
+    expect(mockReplace).toHaveBeenCalledWith('/login');
+  });
+
+  it('disables register button while loading', async () => {
+    let resolveRegister: any;
+    mockRegister.mockImplementation(() => new Promise(resolve => { resolveRegister = resolve; }));
+    
+    const { getByTestId } = render(<RegisterPage />);
+
+    // Fill minimal form
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Institution Name'), 'Test Hospital');
+      fireEvent.changeText(getByTestId('input-Username'), 'testuser');
+      fireEvent.changeText(getByTestId('input-Password'), 'testpass');
+    });
+
+    // Submit form (but don't await - we want to check during loading)
+    fireEvent.press(getByTestId('button-Register'));
+
+    // Wait a tick for state to update
+    await waitFor(() => {
+      const registerButton = getByTestId('button-Register');
+      expect(registerButton.props.accessibilityState.disabled).toBe(true);
+    });
+
+    // Clean up: resolve the promise
+    if (resolveRegister) {
+      await act(async () => {
+        resolveRegister({});
+      });
+    }
+  });
+
+  it('handles empty address and city fields', async () => {
+    mockRegister.mockResolvedValueOnce({});
+    
+    const { getByTestId } = render(<RegisterPage />);
+
+    // Fill required fields only (no address or city)
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Username'), 'testuser');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Password'), 'testpass');
+    });
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Institution Name'), 'Test Hospital');
+    });
+
+    // Submit the form
+    await act(async () => {
+      fireEvent.press(getByTestId('button-Register'));
+    });
+
+    // Verify registration was called with empty strings for address and city
+    expect(mockRegister).toHaveBeenCalledWith(
+      expect.objectContaining({
+        username: 'testuser',
+        password: 'testpass',
+        institution_name: 'Test Hospital',
+        address: '',
+        city: '',
+      }),
+      'mx'
+    );
+  });
+
+  it('handles non-Error exceptions during registration', async () => {
+    mockRegister.mockRejectedValueOnce('String error');
+    
+    const { getByTestId, getByText } = render(<RegisterPage />);
+
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Institution Name'), 'Test Hospital');
+      fireEvent.changeText(getByTestId('input-Username'), 'testuser');
+      fireEvent.changeText(getByTestId('input-Password'), 'testpass');
+    });
+
+    await act(async () => {
+      fireEvent.press(getByTestId('button-Register'));
+    });
+
+    // Should display generic error message
+    expect(getByText('Registration failed')).toBeTruthy();
+  });
+
+  it('shows loading state correctly', async () => {
+    const { getByText, queryByText } = render(<RegisterPage />);
+
+    // Initially should show "Register" text
+    expect(getByText('Register')).toBeTruthy();
+
+    // Loading text is shown when submitting
+    // This is tested in the "disables register button while loading" test
+  });
+
+  it('renders all input fields with correct testIDs', () => {
+    const { getByTestId } = render(<RegisterPage />);
+
+    // Verify all input testIDs exist
+    expect(getByTestId('input-Institution Name')).toBeTruthy();
+    expect(getByTestId('input-NIT')).toBeTruthy();
+    expect(getByTestId('input-Phone')).toBeTruthy();
+    expect(getByTestId('input-Email')).toBeTruthy();
+    expect(getByTestId('input-Address')).toBeTruthy();
+    expect(getByTestId('input-City')).toBeTruthy();
+    expect(getByTestId('input-Username')).toBeTruthy();
+    expect(getByTestId('input-Password')).toBeTruthy();
   });
 });

@@ -8,6 +8,7 @@ export default function OrdersLayout() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen name="detail" />
     </Stack>
   );
 }

@@ -10,6 +10,8 @@ export type RegisterRequest = {
   password: string;
   institution_name: string;
   role?: string;
+  address?: string;
+  city?: string;
 };
 
 const BASE_URL = 'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1';
