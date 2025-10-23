@@ -188,11 +188,11 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#8B5CF6', // Purple color from the image
+    backgroundColor: '#6750A4', // Purple color matching register visit button
     paddingVertical: 8,
     paddingBottom: 12,
     borderTopWidth: 1,
-    borderTopColor: '#7C3AED',
+    borderTopColor: '#5A3D8F',
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
