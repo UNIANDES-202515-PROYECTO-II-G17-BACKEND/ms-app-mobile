@@ -21,6 +21,14 @@ export interface CreateVisitRequest {
   sugerencias_producto: string;
 }
 
+export interface CreateVisitDetailRequest {
+  id_cliente: string;
+  atendido_por: string;
+  hallazgos: string;
+  sugerencias_producto: string;
+  foto?: any; // Opcional - será agregado en el futuro
+}
+
 export interface GetVisitsParams {
   id_vendedor?: string | number;
   fecha?: string;
@@ -141,7 +149,79 @@ export const createVisit = async (
   }
 };
 
+/**
+ * Crear detalle de una visita existente
+ * @param visitId ID de la visita
+ * @param detailData Datos del detalle de la visita
+ * @param country País para el header X-Country
+ * @returns Resultado de la creación del detalle
+ */
+export const createVisitDetail = async (
+  visitId: string,
+  detailData: CreateVisitDetailRequest,
+  country?: string
+): Promise<any> => {
+  try {
+    const userCountry = country || await getUserCountry();
+    
+    // Crear FormData para el envío
+    const formData = new FormData();
+    formData.append('id_cliente', detailData.id_cliente);
+    formData.append('atendido_por', detailData.atendido_por);
+    formData.append('hallazgos', detailData.hallazgos);
+    formData.append('sugerencias_producto', detailData.sugerencias_producto);
+    
+    // Foto es opcional, por ahora no se envía
+    // if (detailData.foto) {
+    //   formData.append('foto', detailData.foto);
+    // }
+    
+    const url = `${BASE_URL}/visitas/${visitId}/detalle`;
+    
+    console.log('=== CREATE VISIT DETAIL REQUEST ===');
+    console.log('URL:', url);
+    console.log('Visit ID:', visitId);
+    console.log('Headers:', { 'X-Country': userCountry });
+    console.log('Detail Data:', {
+      id_cliente: detailData.id_cliente,
+      atendido_por: detailData.atendido_por,
+      hallazgos: detailData.hallazgos,
+      sugerencias_producto: detailData.sugerencias_producto,
+    });
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-Country': userCountry,
+        // No establecer Content-Type, fetch lo establece automáticamente para FormData
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Error response:', text);
+      throw new Error(`Failed to create visit detail: ${response.status} ${text}`);
+    }
+
+    const result = await response.json();
+    console.log('=== CREATE VISIT DETAIL RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error('Error al crear el detalle de la visita:', error);
+    
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Error de conexión: No se pudo conectar con el servidor.');
+    }
+    
+    throw error;
+  }
+};
+
 export default {
   getVisits,
   createVisit,
+  createVisitDetail,
 };

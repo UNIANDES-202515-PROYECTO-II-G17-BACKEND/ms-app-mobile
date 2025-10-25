@@ -3,15 +3,15 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    ActivityIndicator,
-    FlatList,
-    Platform,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { getCurrentUser, getInstitutionalCustomers } from './services/userService';
 import { getVisits, Visit } from './services/visitService';
@@ -143,7 +143,7 @@ const VisitsScreen = () => {
     switch (estado) {
       case 'pendiente':
         return '#FFA726'; // Orange
-      case 'completada':
+      case 'finalizada':
         return '#66BB6A'; // Green
       case 'cancelada':
         return '#EF5350'; // Red
@@ -161,6 +161,8 @@ const VisitsScreen = () => {
         return t('completed');
       case 'cancelada':
         return t('cancelled');
+      case 'finalizada':
+        return t('finalized');
       default:
         return estado;
     }
@@ -169,9 +171,32 @@ const VisitsScreen = () => {
   // Renderizar cada visita
   const renderVisitItem = ({ item }: { item: Visit }) => {
     const clientName = clientsMap.get(item.id_cliente) || `ID: ${item.id_cliente}`;
+    const isCompleted = item.estado === 'finalizada';
+    
+    const handlePress = () => {
+      if (isCompleted) {
+        return; // No hacer nada si está finalizada
+      }
+      
+      // Navegar al registro de visita con los datos pre-cargados
+      router.push({
+        pathname: '/register-visit',
+        params: {
+          clientId: item.id_cliente,
+          clientName: clientName,
+          contactName: item.contacto,
+          visitId: item.id
+        }
+      } as any);
+    };
     
     return (
-      <View style={styles.visitCard}>
+      <TouchableOpacity 
+        style={styles.visitCard}
+        onPress={handlePress}
+        activeOpacity={isCompleted ? 1 : 0.7}
+        disabled={isCompleted}
+      >
         <View style={styles.visitHeader}>
           <View style={styles.visitHeaderLeft}>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.estado) }]}>
@@ -202,16 +227,16 @@ const VisitsScreen = () => {
           </View>
         </View>
 
-        {/* Botón para crear nueva visita */}
-        <TouchableOpacity 
-          style={styles.newVisitButton}
-          onPress={() => router.push('/register-visit' as any)}
-        >
-          <Text style={styles.newVisitButtonText}>
-            + {t('registerVisit') || 'Registrar nueva visita'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* Indicador visual de que es clickeable - solo si NO está finalizada */}
+        {!isCompleted && (
+          <View style={styles.visitFooter}>
+            <Text style={styles.clickHintText}>
+              {t('tapToRegisterDetails') || 'Toca para registrar detalles'}
+            </Text>
+            <Text style={styles.arrowIcon}>→</Text>
+          </View>
+        )}
+      </TouchableOpacity>
     );
   };
 
@@ -510,6 +535,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  visitCardDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#F5F5F5',
+  },
   visitHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -615,6 +644,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  visitFooter: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  clickHintText: {
+    fontSize: 13,
+    color: '#6750A4',
+    fontWeight: '500',
+  },
+  arrowIcon: {
+    fontSize: 18,
+    color: '#6750A4',
+    fontWeight: 'bold',
   },
 });
 

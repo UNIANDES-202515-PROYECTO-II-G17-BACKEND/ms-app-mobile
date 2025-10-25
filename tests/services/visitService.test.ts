@@ -1,5 +1,5 @@
 import { getUserCountry } from '../../app/services/storageService';
-import { createVisit, getVisits } from '../../app/services/visitService';
+import { createVisit, createVisitDetail, getVisits } from '../../app/services/visitService';
 
 // Mock global fetch
 global.fetch = jest.fn();
@@ -66,6 +66,27 @@ describe('visitService', () => {
           method: 'GET',
           headers: {
             'X-Country': 'mx',
+          },
+        }
+      );
+    });
+
+    it('should handle estado filter parameter correctly', async () => {
+      const mockVisits: any[] = [];
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockVisits,
+      });
+
+      await getVisits({ id_vendedor: 1, estado: 'completada' }, 'co');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1/visitas?id_vendedor=1&estado=completada',
+        {
+          method: 'GET',
+          headers: {
+            'X-Country': 'co',
           },
         }
       );
@@ -180,6 +201,108 @@ describe('visitService', () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
       await expect(createVisit(mockVisitData, 'co')).rejects.toThrow(
+        'Error de conexión: No se pudo conectar con el servidor.'
+      );
+    });
+  });
+
+  describe('createVisitDetail', () => {
+    it('should create visit detail successfully', async () => {
+      const visitId = 'visit-123';
+      const mockDetailData = {
+        id_cliente: '111111111-1111111-1111111-111111',
+        atendido_por: 'Carlos Pérez',
+        hallazgos: 'Medicamentos almacenados de forma inadecuada',
+        sugerencias_producto: 'Se sugiere una mejor refrigeración.',
+      };
+
+      const mockResponse = {
+        id: 'detail-123',
+        visita_id: visitId,
+        ...mockDetailData,
+        created_at: '2025-10-24T00:00:00Z',
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await createVisitDetail(visitId, mockDetailData, 'mx');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://medisupply-gw-5k2l9pfv.uc.gateway.dev/v1/visitas/${visitId}/detalle`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            'X-Country': 'mx',
+          },
+        })
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should use country from storage when not provided', async () => {
+      mockGetUserCountry.mockResolvedValue('co' as any);
+
+      const visitId = 'visit-123';
+      const mockDetailData = {
+        id_cliente: '111111111-1111111-1111111-111111',
+        atendido_por: 'Carlos Pérez',
+        hallazgos: 'Medicamentos almacenados de forma inadecuada',
+        sugerencias_producto: 'Se sugiere una mejor refrigeración.',
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'detail-123' }),
+      });
+
+      await createVisitDetail(visitId, mockDetailData);
+
+      expect(mockGetUserCountry).toHaveBeenCalled();
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: {
+            'X-Country': 'co',
+          },
+        })
+      );
+    });
+
+    it('should throw error when creation fails', async () => {
+      const visitId = 'visit-123';
+      const mockDetailData = {
+        id_cliente: '111111111-1111111-1111111-111111',
+        atendido_por: 'Carlos Pérez',
+        hallazgos: 'Medicamentos almacenados de forma inadecuada',
+        sugerencias_producto: 'Se sugiere una mejor refrigeración.',
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: async () => 'Bad Request',
+      });
+
+      await expect(createVisitDetail(visitId, mockDetailData, 'mx')).rejects.toThrow(
+        'Failed to create visit detail: 400 Bad Request'
+      );
+    });
+
+    it('should handle network errors', async () => {
+      const visitId = 'visit-123';
+      const mockDetailData = {
+        id_cliente: '111111111-1111111-1111111-111111',
+        atendido_por: 'Carlos Pérez',
+        hallazgos: 'Medicamentos almacenados de forma inadecuada',
+        sugerencias_producto: 'Se sugiere una mejor refrigeración.',
+      };
+
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+      await expect(createVisitDetail(visitId, mockDetailData, 'mx')).rejects.toThrow(
         'Error de conexión: No se pudo conectar con el servidor.'
       );
     });

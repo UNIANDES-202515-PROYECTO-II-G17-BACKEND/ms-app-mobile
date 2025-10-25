@@ -52,6 +52,12 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
+        name="register-visit"
+        options={{
+          headerShown: false
+        }}
+      />
+      <Stack.Screen
         name="visits"
         options={{
           headerShown: false
