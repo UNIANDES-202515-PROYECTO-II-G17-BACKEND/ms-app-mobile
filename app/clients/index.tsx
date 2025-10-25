@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import BottomNavigationBar from '../common/BottomNavigationBar';
 import { useUserRole } from '../hooks/useUserRole';
@@ -54,7 +54,9 @@ const ClientsScreen = () => {
         client.institution_name.toLowerCase().includes(query) ||
         client.username.toLowerCase().includes(query) ||
         (client.full_name && client.full_name.toLowerCase().includes(query)) ||
-        (client.email && client.email.toLowerCase().includes(query))
+        (client.email && client.email.toLowerCase().includes(query)) ||
+        (client.address && client.address.toLowerCase().includes(query)) ||
+        (client.city && client.city.toLowerCase().includes(query))
       );
       setFilteredClients(filtered);
     }
@@ -108,6 +110,20 @@ const ClientsScreen = () => {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>{t('phone')}:</Text>
             <Text style={styles.detailValue}>{item.telephone}</Text>
+          </View>
+        )}
+        
+        {item.address && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{t('address')}:</Text>
+            <Text style={styles.detailValue}>{item.address}</Text>
+          </View>
+        )}
+        
+        {item.city && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{t('city')}:</Text>
+            <Text style={styles.detailValue}>{item.city}</Text>
           </View>
         )}
         

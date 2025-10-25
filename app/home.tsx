@@ -1,18 +1,36 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BottomNavigationBar from './common/BottomNavigationBar';
 import { useUserRole } from './hooks/useUserRole';
+import { getVisits } from './services/visitService';
 
 const HomeScreen = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const [value, setValue] = React.useState(0); // Default to 'Home' tab
+  const [value, setValue] = useState(0); // Default to 'Home' tab
   const { userRole } = useUserRole();
+  const [visitsCount, setVisitsCount] = useState(0);
 
-  const handleRegisterVisit = () => {
-    router.push('/register-visit');
+  // Cargar el contador de visitas
+  useEffect(() => {
+    const fetchVisitsCount = async () => {
+      if (userRole === 'seller') {
+        try {
+          const visits = await getVisits();
+          setVisitsCount(visits.length);
+        } catch (error) {
+          console.error('Error fetching visits count:', error);
+        }
+      }
+    };
+    
+    fetchVisitsCount();
+  }, [userRole]);
+
+  const handleViewVisits = () => {
+    router.push('/visits');
   };
 
   return (
@@ -27,15 +45,17 @@ const HomeScreen = () => {
         </Text>
         <Text style={styles.subtitle}>{t('welcomeMessage')}</Text>
 
-        {/* Botón de Registrar Visita - Solo para sellers */}
+        {/* Botón de Ver Visitas - Solo para sellers */}
         {userRole === 'seller' && (
           <View style={styles.actionsContainer}>
             <TouchableOpacity 
-              style={styles.registerVisitButton}
-              onPress={handleRegisterVisit}
+              style={styles.visitsButton}
+              onPress={handleViewVisits}
             >
-              <Text style={styles.registerVisitIcon}>📋</Text>
-              <Text style={styles.registerVisitText}>{t('registerVisit')}</Text>
+              <Text style={styles.visitsButtonIcon}>📋</Text>
+              <View style={styles.visitsButtonContent}>
+                <Text style={styles.visitsButtonText}>{t('myVisits')}</Text>
+              </View>
             </TouchableOpacity>
           </View>
         )}
@@ -76,7 +96,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
   },
-  registerVisitButton: {
+  visitsButton: {
     backgroundColor: '#6750A4',
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -90,14 +110,24 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  registerVisitIcon: {
+  visitsButtonIcon: {
     fontSize: 24,
     marginRight: 12,
   },
-  registerVisitText: {
+  visitsButtonContent: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  visitsButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  visitsCountText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    opacity: 0.9,
+    marginTop: 2,
   },
 });
 

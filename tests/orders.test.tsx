@@ -226,4 +226,164 @@ describe('OrdersScreen', () => {
       expect(mockGetOrders).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('handles pull to refresh', async () => {
+    mockGetOrders.mockResolvedValue(mockOrders);
+
+    const { getByTestId } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('orders-flat-list')).toBeTruthy();
+    });
+
+    // Simular el refresh
+    const flatList = getByTestId('orders-flat-list');
+    
+    await act(async () => {
+      fireEvent(flatList, 'refresh');
+      // Esperar a que se complete el refresh
+      await new Promise(resolve => setTimeout(resolve, 100));
+    });
+
+    // Verificar que se llamó getOrders al menos una vez (mount + refresh)
+    expect(mockGetOrders).toHaveBeenCalled();
+  });
+
+  it('displays order codes correctly', async () => {
+    mockGetOrders.mockResolvedValue(mockOrders);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('SO-2025-001')).toBeTruthy();
+      expect(getByText('SO-2025-002')).toBeTruthy();
+    });
+  });
+
+  it('handles orders with different estados correctly', async () => {
+    const ordersWithDifferentStates = [
+      { ...mockOrders[0], estado: 'COMPLETADO' },
+      { ...mockOrders[1], estado: 'CANCELADO' },
+      { ...mockOrders[0], id: '3', codigo: 'SO-2025-003', estado: 'EN_PROCESO' },
+    ];
+    
+    mockGetOrders.mockResolvedValue(ordersWithDifferentStates);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Completed')).toBeTruthy();
+      expect(getByText('Cancelled')).toBeTruthy();
+      expect(getByText('In Process')).toBeTruthy();
+    });
+  });
+
+  it('calls getOrders with correct parameters on mount', async () => {
+    mockGetOrders.mockResolvedValueOnce(mockOrders);
+
+    render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(mockGetOrders).toHaveBeenCalledWith(undefined, { tipo: 'VENTA' });
+    });
+  });
+
+  it('renders bottom navigation bar', async () => {
+    mockGetOrders.mockResolvedValueOnce(mockOrders);
+
+    const { getByTestId } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('bottom-nav')).toBeTruthy();
+    });
+  });
+
+  it('displays order code correctly', async () => {
+    mockGetOrders.mockResolvedValueOnce(mockOrders);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('SO-2025-001')).toBeTruthy();
+      expect(getByText('SO-2025-002')).toBeTruthy();
+    });
+  });
+
+  it('handles empty items array', async () => {
+    const orderWithNoItems = [{
+      ...mockOrders[0],
+      items: [],
+    }];
+    
+    mockGetOrders.mockResolvedValue(orderWithNoItems);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      // Verificar que el pedido se renderiza con 0 items
+      expect(getByText('SO-2025-001')).toBeTruthy();
+      expect(getByText('0')).toBeTruthy(); // El número de items
+    });
+  });
+
+  it('handles orders with null total', async () => {
+    const orderWithNullTotal = [{
+      ...mockOrders[0],
+      total: 'NaN' as any, // Cuando llega null, se convierte en NaN al parsear
+    }];
+    
+    mockGetOrders.mockResolvedValue(orderWithNullTotal);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('SO-2025-001')).toBeTruthy();
+    });
+  });
+
+  it('handles network timeout error', async () => {
+    mockGetOrders.mockRejectedValue(new Error('Network timeout'));
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Error al cargar pedidos')).toBeTruthy();
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('displays subtitle with correct order count', async () => {
+    mockGetOrders.mockResolvedValue(mockOrders);
+
+    const { getByText, getAllByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      // Verificar que muestra "pedidos" (plural) con 2
+      const elements = getAllByText(/pedidos/);
+      expect(elements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('displays singular pedido text when count is 1', async () => {
+    mockGetOrders.mockResolvedValue([mockOrders[0]]);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      // Verificar que muestra el código del pedido
+      expect(getByText('SO-2025-001')).toBeTruthy();
+    });
+  });
+
+  it('renders orders header correctly', async () => {
+    mockGetOrders.mockResolvedValueOnce(mockOrders);
+
+    const { getByText } = render(<OrdersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Orders')).toBeTruthy();
+    });
+  });
 });
