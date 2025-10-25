@@ -51,6 +51,12 @@ export default function RootLayout() {
           headerShown: false
         }}
       />
+      <Stack.Screen
+        name="visits"
+        options={{
+          headerShown: false
+        }}
+      />
     </Stack>
   );
 }
