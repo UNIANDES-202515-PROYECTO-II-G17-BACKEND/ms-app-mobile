@@ -1,19 +1,19 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { getInstitutionalCustomers, InstitutionalCustomer } from './services/userService';
-import { createVisit } from './services/visitService';
+import { createVisit, createVisitDetail } from './services/visitService';
 
 // Custom Alert Component
 interface CustomAlertProps {
@@ -155,6 +155,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 const RegisterVisitScreen = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Obtener parámetros de la visita seleccionada
+  const clientId = params.clientId ? Number(params.clientId) : null;
+  const clientName = params.clientName as string || '';
+  const contactName = params.contactName as string || '';
+  const visitId = params.visitId as string || '';
   
   // Form state
   const [selectedClientId, setSelectedClientId] = useState<number | ''>('');
@@ -170,9 +177,22 @@ const RegisterVisitScreen = () => {
   const [clients, setClients] = useState<InstitutionalCustomer[]>([]);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: boolean}>({});
 
+  // Pre-cargar datos si vienen de una visita existente
   useEffect(() => {
-    loadClients();
-  }, []);
+    if (clientId) {
+      setSelectedClientId(clientId);
+    }
+    if (contactName) {
+      setNombreContacto(contactName);
+    }
+  }, [clientId, contactName]);
+
+  useEffect(() => {
+    // Solo cargar clientes si no viene un clientId pre-seleccionado
+    if (!clientId) {
+      loadClients();
+    }
+  }, [clientId]);
 
   const loadClients = async () => {
     try {
@@ -190,10 +210,11 @@ const RegisterVisitScreen = () => {
   const validateForm = (): boolean => {
     const errors: {[key: string]: boolean} = {};
     
-    if (!selectedClientId) {
+    // Solo validar cliente y contacto si no vienen de parámetros
+    if (!clientId && !selectedClientId) {
       errors.cliente = true;
     }
-    if (!nombreContacto.trim()) {
+    if (!contactName && !nombreContacto.trim()) {
       errors.nombreContacto = true;
     }
     if (!hallazgosTecnicos.trim()) {
@@ -227,14 +248,31 @@ const RegisterVisitScreen = () => {
 
       setLoading(true);
 
-      const visitData = {
-        cliente_id: selectedClientId as number,
-        nombre_contacto: nombreContacto.trim(),
-        hallazgos_tecnicos: hallazgosTecnicos.trim(),
-        sugerencias_producto: sugerenciasProducto.trim(),
-      };
+      // Usar clientId del parámetro si existe, sino el seleccionado
+      const finalClientId = clientId || (selectedClientId as number);
+      const finalContactName = contactName || nombreContacto.trim();
 
-      await createVisit(visitData);
+      // Si viene de una visita existente (tiene visitId), crear detalle
+      if (visitId) {
+        const detailData = {
+          id_cliente: String(finalClientId),
+          atendido_por: finalContactName,
+          hallazgos: hallazgosTecnicos.trim(),
+          sugerencias_producto: sugerenciasProducto.trim(),
+        };
+
+        await createVisitDetail(visitId, detailData);
+      } else {
+        // Si no, crear nueva visita (comportamiento anterior)
+        const visitData = {
+          cliente_id: finalClientId,
+          nombre_contacto: finalContactName,
+          hallazgos_tecnicos: hallazgosTecnicos.trim(),
+          sugerencias_producto: sugerenciasProducto.trim(),
+        };
+
+        await createVisit(visitData);
+      }
 
       setSuccessMessage(t('visitRegisteredSuccess'));
       
@@ -273,38 +311,57 @@ const RegisterVisitScreen = () => {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Cliente */}
-        <CustomSelect
-          label={t('client')}
-          value={selectedClientId}
-          options={clientOptions}
-          onChange={(value) => {
-            setSelectedClientId(value);
-            setFieldErrors({...fieldErrors, cliente: false});
-          }}
-          disabled={loadingClients}
-          loading={loadingClients}
-          error={fieldErrors.cliente}
-          t={t}
-        />
+        {/* Mostrar información de la visita si viene de parámetros */}
+        {clientId && (
+          <View style={styles.visitInfoCard}>
+            <Text style={styles.visitInfoTitle}>📋 {t('visitInformation') || 'Información de la Visita'}</Text>
+            <View style={styles.visitInfoRow}>
+              <Text style={styles.visitInfoLabel}>🏢 {t('client')}:</Text>
+              <Text style={styles.visitInfoValue}>{clientName}</Text>
+            </View>
+            <View style={styles.visitInfoRow}>
+              <Text style={styles.visitInfoLabel}>👤 {t('contact')}:</Text>
+              <Text style={styles.visitInfoValue}>{contactName}</Text>
+            </View>
+          </View>
+        )}
 
-        {/* Nombre del Contacto */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>{t('contactName')} *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              fieldErrors.nombreContacto && styles.inputError
-            ]}
-            value={nombreContacto}
-            onChangeText={(text) => {
-              setNombreContacto(text);
-              setFieldErrors({...fieldErrors, nombreContacto: false});
+        {/* Cliente - Solo mostrar si NO viene de parámetros */}
+        {!clientId && (
+          <CustomSelect
+            label={t('client')}
+            value={selectedClientId}
+            options={clientOptions}
+            onChange={(value) => {
+              setSelectedClientId(value);
+              setFieldErrors({...fieldErrors, cliente: false});
             }}
-            placeholder={t('enterContactName')}
-            placeholderTextColor="#999"
+            disabled={loadingClients}
+            loading={loadingClients}
+            error={fieldErrors.cliente}
+            t={t}
           />
-        </View>
+        )}
+
+        {/* Nombre del Contacto - Solo mostrar si NO viene de parámetros */}
+        {!contactName && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>{t('contactName')} *</Text>
+            <TextInput
+              style={[
+                styles.input,
+                fieldErrors.nombreContacto && styles.inputError
+              ]}
+              value={nombreContacto}
+              onChangeText={(text) => {
+                setNombreContacto(text);
+                setFieldErrors({...fieldErrors, nombreContacto: false});
+              }}
+              placeholder={t('enterContactName')}
+              placeholderTextColor="#999"
+            />
+          </View>
+        )}
 
         {/* Hallazgos Técnicos */}
         <View style={styles.inputGroup}>
@@ -621,6 +678,41 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  visitInfoCard: {
+    backgroundColor: '#E8DEF8',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#6750A4',
+  },
+  visitInfoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6750A4',
+    marginBottom: 12,
+  },
+  visitInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#D0BCFF',
+  },
+  visitInfoLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    flex: 1,
+  },
+  visitInfoValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    flex: 2,
+    textAlign: 'right',
   },
 });
 
