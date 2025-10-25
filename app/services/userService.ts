@@ -28,6 +28,8 @@ export interface InstitutionalCustomer {
   document_number: string | null;
   email: string | null;
   telephone: string | null;
+  address: string | null;
+  city: string | null;
   created_at: string;
   updated_at: string | null;
 }

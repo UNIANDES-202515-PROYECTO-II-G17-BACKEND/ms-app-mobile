@@ -5,9 +5,9 @@ import { getUserCountry } from './storageService';
 export interface OrderItem {
   producto_id: string;
   cantidad: number;
-  precio_unitario: number | string;
-  impuesto_pct: number | string;
-  descuento_pct?: number | string | null;
+  precio_unitario: number;
+  impuesto_pct: number;
+  descuento_pct?: number | null;
   sku?: string;
 }
 
@@ -16,6 +16,7 @@ export interface CreateOrderRequest {
   cliente_id: number;
   vendedor_id: number;
   bodega_origen_id: string;
+  fecha_entrega?: string;
   items: OrderItem[];
   observaciones?: string;
 }
@@ -48,6 +49,7 @@ export interface Order {
   items: OrderItem[];
   fecha_creacion?: string;
   fecha_actualizacion?: string;
+  direccion?: string;
 }
 
 export interface GetOrdersParams {
@@ -61,23 +63,51 @@ export const createOrder = async (
   orderData: CreateOrderRequest,
   country?: string
 ): Promise<CreateOrderResponse> => {
-  const userCountry = country || await getUserCountry();
-  
-  const response = await fetch(`${BASE_URL}/pedidos`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Country': userCountry,
-    },
-    body: JSON.stringify(orderData),
-  });
+  try {
+    const userCountry = country || await getUserCountry();
+    
+    // Asegurar que los números son números y no strings
+    const sanitizedData = {
+      ...orderData,
+      items: orderData.items.map(item => ({
+        ...item,
+        cantidad: Number(item.cantidad),
+        precio_unitario: Number(item.precio_unitario),
+        impuesto_pct: Number(item.impuesto_pct),
+        descuento_pct: item.descuento_pct ? Number(item.descuento_pct) : undefined
+      }))
+    };
+    
+    console.log('Enviando pedido:', JSON.stringify(sanitizedData, null, 2));
+    
+    const response = await fetch(`${BASE_URL}/pedidos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Country': userCountry,
+      },
+      body: JSON.stringify(sanitizedData),
+    });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to create order: ${response.status} ${text}`);
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Error response:', text);
+      throw new Error(`Failed to create order: ${response.status} ${text}`);
+    }
+
+    const result = await response.json();
+    console.log('Pedido creado exitosamente:', result);
+    return result;
+  } catch (error) {
+    console.error('Error al crear el pedido:', error);
+    
+    // Verificar si es un error de red/CORS
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error('Error de conexión: No se pudo conectar con el servidor. Verifica tu conexión a internet o que el API esté disponible.');
+    }
+    
+    throw error;
   }
-
-  return await response.json();
 };
 
 export const getOrders = async (

@@ -167,4 +167,51 @@ describe('LoginPage', () => {
     expect(login).toHaveBeenCalledWith('testuser', 'testpass', 'mx');
     expect(login).toHaveBeenCalledTimes(1);
   });
+
+  it('navigates to register page when create account is clicked', async () => {
+    const mockRouter = { replace: jest.fn(), push: jest.fn() };
+    jest.spyOn(require('expo-router'), 'useRouter').mockReturnValue(mockRouter);
+
+    const { getByTestId } = render(<LoginPage />);
+
+    await act(async () => {
+      fireEvent.press(getByTestId('button-Create Account'));
+    });
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/register');
+  });
+
+  it('shows loading state during login', async () => {
+    const mockLoginPromise = new Promise((resolve) => 
+      setTimeout(() => resolve({
+        access_token: 'test-token',
+        refresh_token: 'test-refresh',
+        token_type: 'Bearer',
+        expires_in: 3600
+      }), 100)
+    );
+
+    (login as jest.Mock).mockReturnValue(mockLoginPromise);
+    (saveAuth as jest.Mock).mockResolvedValue(undefined);
+    (saveUserCountry as jest.Mock).mockResolvedValue(undefined);
+
+    const { getByTestId, getByText } = render(<LoginPage />);
+
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-Username'), 'testuser');
+      fireEvent.changeText(getByTestId('input-Password'), 'testpass');
+    });
+
+    await act(async () => {
+      fireEvent.press(getByText('Login'));
+    });
+
+    // Should show loading text
+    expect(getByText('Cargando...')).toBeTruthy();
+
+    // Wait for login to complete
+    await act(async () => {
+      await mockLoginPromise;
+    });
+  });
 });

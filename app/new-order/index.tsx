@@ -150,6 +150,7 @@ const NewOrderScreen = () => {
   const router = useRouter();
   const { products, removeProduct, clearProducts } = useOrder();
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [orderObservations, setOrderObservations] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +201,38 @@ const NewOrderScreen = () => {
     router.push('/');
   };
 
+  // Formatear fecha al formato YYYY-MM-DD
+  const formatDateToISO = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Validar formato de fecha YYYY-MM-DD
+  const isValidDateFormat = (dateString: string): boolean => {
+    if (!dateString) return true; // Fecha vacía es válida (opcional)
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) return false;
+    
+    // Validar que sea una fecha válida
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date.getTime());
+  };
+
+  // Manejar cambio de fecha manual
+  const handleDateChange = (text: string) => {
+    setDeliveryDate(text);
+  };
+
+  // Seleccionar fecha desde el selector
+  const selectDate = (offset: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    setDeliveryDate(formatDateToISO(date));
+    setShowDatePicker(false);
+  };
+
   const handleSend = async () => {
     try {
       setLoading(true);
@@ -208,6 +241,13 @@ const NewOrderScreen = () => {
       // Validar que haya productos en el pedido
       if (products.length === 0) {
         setError('Debe agregar al menos un producto al pedido');
+        setLoading(false);
+        return;
+      }
+
+      // Validar formato de fecha si se proporcionó
+      if (deliveryDate && !isValidDateFormat(deliveryDate)) {
+        setError('Formato de fecha inválido. Use YYYY-MM-DD (ej: 2025-10-30)');
         setLoading(false);
         return;
       }
@@ -255,11 +295,23 @@ const NewOrderScreen = () => {
       // Preparar los items del pedido
       const items = products.map(product => ({
         producto_id: product.id,
-        cantidad: product.cantidad,
-        precio_unitario: product.precio_unitario || 0,
-        impuesto_pct: product.impuesto_pct || 19,
+        cantidad: Number(product.cantidad) || 1,
+        precio_unitario: Number(product.precio_unitario) || 0,
+        impuesto_pct: Number(product.impuesto_pct) || 19,
         sku: product.sku
       }));
+
+      // Validar que los items tengan valores válidos
+      const invalidItems = items.filter(item => 
+        !item.producto_id || 
+        item.cantidad <= 0 || 
+        item.precio_unitario < 0 ||
+        item.impuesto_pct < 0
+      );
+
+      if (invalidItems.length > 0) {
+        throw new Error('Algunos productos tienen valores inválidos. Por favor verifica la información.');
+      }
 
       // Crear el payload del pedido
       const orderPayload = {
@@ -269,7 +321,10 @@ const NewOrderScreen = () => {
         bodega_origen_id: bodegaOrigenId,
         items: items,
         observaciones: orderObservations || undefined,
+        fecha_entrega: deliveryDate || undefined
       };
+
+      console.log('Payload del pedido:', JSON.stringify(orderPayload, null, 2));
 
       // Llamar al servicio de creación de pedido (ya no necesitamos pasar el país)
       const response = await createOrder(orderPayload);
@@ -313,20 +368,101 @@ const NewOrderScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>{t('newOrder')}</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{t('newOrder')}</Text>
+      </View>
 
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Fecha de entrega */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>{t('deliveryDate')}</Text>
-          <TextInput
-            style={styles.input}
-            value={deliveryDate}
-            onChangeText={setDeliveryDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#999"
-          />
+          <View style={styles.dateInputContainer}>
+            <TextInput
+              style={[
+                styles.input,
+                styles.dateInput,
+                deliveryDate && !isValidDateFormat(deliveryDate) && styles.inputError
+              ]}
+              value={deliveryDate}
+              onChangeText={handleDateChange}
+              placeholder="YYYY-MM-DD (ej: 2025-10-30)"
+              placeholderTextColor="#999"
+            />
+            <TouchableOpacity
+              style={styles.calendarButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.calendarButtonText}>📅</Text>
+            </TouchableOpacity>
+          </View>
+          {deliveryDate && !isValidDateFormat(deliveryDate) && (
+            <Text style={styles.errorText}>Formato inválido. Use YYYY-MM-DD</Text>
+          )}
         </View>
+
+        {/* Modal de selección de fecha */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showDatePicker}
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <Pressable 
+            style={styles.modalOverlay}
+            onPress={() => setShowDatePicker(false)}
+          >
+            <View style={styles.datePickerModal}>
+              <Text style={styles.modalTitle}>Seleccionar Fecha de Entrega</Text>
+              <View style={styles.dateOptions}>
+                <TouchableOpacity
+                  style={styles.dateOption}
+                  onPress={() => selectDate(0)}
+                >
+                  <Text style={styles.dateOptionText}>Hoy</Text>
+                  <Text style={styles.dateOptionDate}>{formatDateToISO(new Date())}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.dateOption}
+                  onPress={() => selectDate(1)}
+                >
+                  <Text style={styles.dateOptionText}>Mañana</Text>
+                  <Text style={styles.dateOptionDate}>
+                    {formatDateToISO(new Date(Date.now() + 86400000))}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.dateOption}
+                  onPress={() => selectDate(7)}
+                >
+                  <Text style={styles.dateOptionText}>En 7 días</Text>
+                  <Text style={styles.dateOptionDate}>
+                    {formatDateToISO(new Date(Date.now() + 7 * 86400000))}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.dateOption}
+                  onPress={() => selectDate(15)}
+                >
+                  <Text style={styles.dateOptionText}>En 15 días</Text>
+                  <Text style={styles.dateOptionDate}>
+                    {formatDateToISO(new Date(Date.now() + 15 * 86400000))}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
 
         {/* Select de Usuario - Cliente Institucional para sellers, Vendedor para clientes */}
         {currentUser && (
@@ -442,6 +578,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#6750A4',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -478,6 +627,33 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: '#333',
+  },
+  inputError: {
+    borderColor: '#DC362E',
+  },
+  dateInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dateInput: {
+    flex: 1,
+  },
+  calendarButton: {
+    backgroundColor: '#6750A4',
+    padding: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 48,
+  },
+  calendarButtonText: {
+    fontSize: 20,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#DC362E',
+    marginTop: 4,
   },
   textArea: {
     minHeight: 80,
@@ -573,6 +749,34 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  datePickerModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    width: '85%',
+    maxWidth: 400,
+  },
+  dateOptions: {
+    gap: 12,
+  },
+  dateOption: {
+    backgroundColor: '#F5F5F5',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  dateOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  dateOptionDate: {
+    fontSize: 14,
+    color: '#6750A4',
+    fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 18,

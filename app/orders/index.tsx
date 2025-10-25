@@ -31,6 +31,7 @@ const OrdersScreen = () => {
       setError(null);
       // Ya no necesitamos obtener el país manualmente
       const data = await getOrders(undefined, { tipo: 'VENTA' });
+      console.log('Pedidos obtenidos:', JSON.stringify(data, null, 2));
       setOrders(data);
     } catch (err) {
       console.error('Error fetching orders:', err);
@@ -76,7 +77,7 @@ const OrdersScreen = () => {
     const upperStatus = status.toUpperCase();
     switch (upperStatus) {
       case 'BORRADOR':
-        return 'Pendiente';
+        return t('draft') || 'Borrador';
       case 'PENDIENTE':
         return t('pending') || 'Pendiente';
       case 'EN_PROCESO':
@@ -102,43 +103,67 @@ const OrdersScreen = () => {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
+  // Formatear precio - Los valores vienen como string con formato "21420.0000"
+  const formatPrice = (price: string | number): string => {
+    // Debug: ver qué valor está llegando
+    console.log('Precio recibido:', price, 'Tipo:', typeof price);
+    
+    // Convertir a número y asegurar que sea válido
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    
+    console.log('Precio convertido:', numPrice);
+    
+    // Si el número no es válido, retornar 0.00
+    if (isNaN(numPrice)) {
+      console.log('Precio es NaN, retornando $0.00');
+      return '$0.00';
+    }
+    
+    // Formato con coma para miles y punto para decimales (ej: $21,420.00)
+    const formatted = `$${numPrice.toLocaleString('en-US', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+    
+    console.log('Precio formateado:', formatted);
+    return formatted;
+  };
+
   // Filtrar órdenes (normalizar estados para la comparación)
-  const filteredOrders = selectedFilter === 'all' 
-    ? orders 
-    : orders.filter(order => {
-        const normalizedStatus = order.estado.toLowerCase().replace('_', '_');
-        return normalizedStatus === selectedFilter;
-      });
+  const filteredOrders = orders;
 
   // Renderizar cada item de la lista
-  const renderOrderItem = ({ item }: { item: Order }) => (
-    <TouchableOpacity 
-      style={styles.orderCard}
-      onPress={() => {
-        // TODO: Navegar a detalle del pedido
-        console.log('Ver detalle de pedido:', item.id);
-      }}
-    >
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>{item.codigo}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.estado) }]}>
-          <Text style={styles.statusText}>{getStatusText(item.estado)}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.orderDetails}>
-        <View style={styles.orderRow}>
-          <Text style={styles.orderLabel}>{t('items') || 'Artículos'}:</Text>
-          <Text style={styles.orderValue}>{item.items.length}</Text>
+  const renderOrderItem = ({ item }: { item: Order }) => {
+    console.log('Renderizando orden:', item.codigo, 'Total:', item);
+    
+    return (
+      <TouchableOpacity 
+        style={styles.orderCard}
+        onPress={() => {
+          router.push(`/orders/detail?id=${item.id}` as any);
+        }}
+      >
+        <View style={styles.orderHeader}>
+          <Text style={styles.orderId}>{item.codigo}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.estado) }]}>
+            <Text style={styles.statusText}>{getStatusText(item.estado)}</Text>
+          </View>
         </View>
         
-        <View style={styles.orderRow}>
-          <Text style={styles.orderLabel}>Total:</Text>
-          <Text style={styles.orderValue}>${parseFloat(item.total).toFixed(2)}</Text>
+        <View style={styles.orderDetails}>
+          <View style={styles.orderRow}>
+            <Text style={styles.orderLabel}>{t('items') || 'Artículos'}:</Text>
+            <Text style={styles.orderValue}>{item.items.length}</Text>
+          </View>
+          
+          <View style={styles.orderRow}>
+            <Text style={styles.orderLabel}>Total:</Text>
+            <Text style={styles.orderValue}>{formatPrice(item.total)}</Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   // Renderizar cuando no hay órdenes
   const renderEmptyList = () => (
@@ -193,6 +218,7 @@ const OrdersScreen = () => {
         </Text>
       </View>
       <FlatList
+        testID="orders-flat-list"
         data={filteredOrders}
         renderItem={renderOrderItem}
         keyExtractor={(item) => item.id}

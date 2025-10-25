@@ -7,7 +7,7 @@ import { UserRole } from '../services/userService';
 // Iconos simples usando emojis o texto (puedes reemplazar con react-native-vector-icons si lo prefieres)
 const HomeIcon = () => <Text style={styles.icon}>🏠</Text>;
 const OrdersIcon = () => <Text style={styles.icon}>🧾</Text>;
-const GroupIcon = () => <Text style={styles.icon}>👥</Text>;
+const GroupIcon = () => <Text style={styles.icon}>🏥</Text>;
 const MapIcon = () => <Text style={styles.icon}>🗺️</Text>;
 const LocalShippingIcon = () => <Text style={styles.icon}>🚚</Text>;
 const SettingsIcon = () => <Text style={styles.icon}>⚙️</Text>;
@@ -39,7 +39,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           router.push('/orders');
           break;
         case 2:
-          // router.push('/clients'); // TODO: Crear pantalla de clientes
+          router.push('/clients');
           break;
         case 3:
           // router.push('/routes'); // TODO: Crear pantalla de rutas
@@ -106,7 +106,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           </Text>
         </TouchableOpacity>
 
-        {/* <TouchableOpacity
+        <TouchableOpacity
           style={[styles.tab, value === 2 && styles.activeTab]}
           onPress={() => handleNavigation(2)}
         >
@@ -114,7 +114,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           <Text style={[styles.label, value === 2 && styles.activeLabel]}>
             {t('clients')}
           </Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
 
         {/* <TouchableOpacity
           style={[styles.tab, value === 3 && styles.activeTab]}
@@ -188,11 +188,11 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#8B5CF6', // Purple color from the image
+    backgroundColor: '#6750A4', // Purple color matching register visit button
     paddingVertical: 8,
     paddingBottom: 12,
     borderTopWidth: 1,
-    borderTopColor: '#7C3AED',
+    borderTopColor: '#5A3D8F',
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },

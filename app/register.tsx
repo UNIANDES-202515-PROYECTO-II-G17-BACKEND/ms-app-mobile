@@ -13,6 +13,8 @@ export default function RegisterPage() {
     nit: '',
     phone: '',
     email: '',
+    address: '',
+    city: '',
     username: '',
     password: '',
     country: 'mx' as CountryCode,
@@ -29,6 +31,8 @@ export default function RegisterPage() {
         username: formData.username,
         password: formData.password,
         institution_name: formData.institutionName,
+        address: formData.address,
+        city: formData.city,
       }, formData.country);
       
       // Navigate to login on success
@@ -96,6 +100,30 @@ export default function RegisterPage() {
               placeholderTextColor="#999"
               keyboardType="email-address"
               autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>{t('address')}</Text>
+            <TextInput
+              testID="input-Address"
+              style={styles.input}
+              value={formData.address}
+              onChangeText={(text) => setFormData({ ...formData, address: text })}
+              placeholder={t('address')}
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>{t('city')}</Text>
+            <TextInput
+              testID="input-City"
+              style={styles.input}
+              value={formData.city}
+              onChangeText={(text) => setFormData({ ...formData, city: text })}
+              placeholder={t('city')}
+              placeholderTextColor="#999"
             />
           </View>
 
