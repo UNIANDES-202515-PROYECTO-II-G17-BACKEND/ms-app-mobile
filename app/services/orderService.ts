@@ -49,6 +49,8 @@ export interface Order {
   items: OrderItem[];
   fecha_creacion?: string;
   fecha_actualizacion?: string;
+  fecha_compromiso?: string;
+  observaciones?: string;
   direccion?: string;
 }
 
@@ -157,7 +159,24 @@ export const getOrders = async (
   }));
 };
 
+/**
+ * Obtiene los pedidos con estado DESPACHADO
+ * @param country - País del usuario (opcional, se obtiene de storage si no se provee)
+ * @param params - Parámetros opcionales (limit, offset)
+ * @returns Promise con la lista de pedidos despachados
+ */
+export const getDispatchedOrders = async (
+  country?: string,
+  params?: Omit<GetOrdersParams, 'estado'>
+): Promise<Order[]> => {
+  return getOrders(country, {
+    ...params,
+    estado: 'DESPACHADO',
+  });
+};
+
 export default {
   createOrder,
   getOrders,
+  getDispatchedOrders,
 };

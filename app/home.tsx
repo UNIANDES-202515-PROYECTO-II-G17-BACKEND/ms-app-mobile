@@ -33,6 +33,10 @@ const HomeScreen = () => {
     router.push('/visits');
   };
 
+  const handleViewDeliveries = () => {
+    router.push('/scheduled-deliveries');
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -55,6 +59,23 @@ const HomeScreen = () => {
               <Text style={styles.visitsButtonIcon}>📋</Text>
               <View style={styles.visitsButtonContent}>
                 <Text style={styles.visitsButtonText}>{t('myVisits')}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Botón de Entregas Programadas - Solo para clientes institucionales */}
+        {userRole === 'institutional_customer' && (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={styles.visitsButton}
+              onPress={handleViewDeliveries}
+            >
+              <Text style={styles.visitsButtonIcon}>🚚</Text>
+              <View style={styles.visitsButtonContent}>
+                <Text style={styles.visitsButtonText}>
+                  {t('scheduledDeliveries') || 'Entregas Programadas'}
+                </Text>
               </View>
             </TouchableOpacity>
           </View>
