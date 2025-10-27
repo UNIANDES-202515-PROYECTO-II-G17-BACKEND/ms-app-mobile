@@ -26,6 +26,8 @@ jest.mock('react-i18next', () => ({
         clients: 'Clients',
         settings: 'Settings',
         myVisits: 'My Visits',
+        scheduledDeliveries: 'Entregas Programadas',
+        viewYourDeliveries: 'Ver tus entregas programadas',
       };
       return translations[key] || key;
     },
@@ -187,6 +189,45 @@ describe('HomePage', () => {
 
     expect(getByText('MediSupply')).toBeTruthy();
     expect(getByText('Your medical supply management platform')).toBeTruthy();
+  });
+
+  it('shows deliveries button for institutional_customer role', () => {
+    mockUserRole.mockReturnValue('institutional_customer');
+
+    const { getByText } = render(<HomePage />);
+
+    expect(getByText('Entregas Programadas')).toBeTruthy();
+  });
+
+  it('does not show deliveries button for seller role', () => {
+    mockUserRole.mockReturnValue('seller');
+    mockGetVisits.mockResolvedValue([]);
+
+    const { queryByText } = render(<HomePage />);
+
+    expect(queryByText('Entregas Programadas')).toBeNull();
+  });
+
+  it('does not show deliveries button for admin role', () => {
+    mockUserRole.mockReturnValue('admin');
+
+    const { queryByText } = render(<HomePage />);
+
+    expect(queryByText('Entregas Programadas')).toBeNull();
+  });
+
+  it('navigates to scheduled deliveries screen when button is pressed', async () => {
+    mockUserRole.mockReturnValue('institutional_customer');
+
+    const { getByText } = render(<HomePage />);
+
+    const deliveriesButton = getByText('Entregas Programadas');
+    
+    await act(async () => {
+      fireEvent.press(deliveriesButton);
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/scheduled-deliveries');
   });
 });
 

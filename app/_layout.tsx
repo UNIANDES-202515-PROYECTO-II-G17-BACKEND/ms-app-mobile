@@ -63,6 +63,12 @@ export default function RootLayout() {
           headerShown: false
         }}
       />
+      <Stack.Screen
+        name="scheduled-deliveries"
+        options={{
+          headerShown: false
+        }}
+      />
     </Stack>
   );
 }
