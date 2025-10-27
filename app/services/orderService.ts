@@ -137,7 +137,24 @@ export const getOrders = async (
     throw new Error(`Failed to fetch orders: ${response.status} ${text}`);
   }
 
-  return await response.json();
+  const orders = await response.json();
+  
+  // Convertir precio_unitario de string a número en los items
+  return orders.map((order: Order) => ({
+    ...order,
+    items: order.items.map(item => ({
+      ...item,
+      precio_unitario: typeof item.precio_unitario === 'string' 
+        ? parseFloat(item.precio_unitario) 
+        : item.precio_unitario,
+      impuesto_pct: typeof item.impuesto_pct === 'string'
+        ? parseFloat(item.impuesto_pct)
+        : item.impuesto_pct,
+      descuento_pct: item.descuento_pct && typeof item.descuento_pct === 'string'
+        ? parseFloat(item.descuento_pct)
+        : item.descuento_pct,
+    })),
+  }));
 };
 
 export default {
