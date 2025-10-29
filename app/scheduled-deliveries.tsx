@@ -3,27 +3,34 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    ActivityIndicator,
-    FlatList,
-    Platform,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import BottomNavigationBar from './common/BottomNavigationBar';
 import { useUserRole } from './hooks/useUserRole';
-import { getDispatchedOrders, Order } from './services/orderService';
+import { getDeliveries, RouteStop } from './services/logisticsService';
+
+// Tipo extendido para las entregas con información de la ruta
+type Delivery = RouteStop & { 
+  ruta_id: string; 
+  fecha_ruta: string; 
+  estado_ruta: string;
+};
 
 const ScheduledDeliveriesScreen = () => {
   const { t } = useTranslation();
   const { userRole } = useUserRole();
   const router = useRouter();
   const [value, setValue] = useState(1);
-  const [deliveries, setDeliveries] = useState<Order[]>([]);
-  const [filteredDeliveries, setFilteredDeliveries] = useState<Order[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,60 +38,71 @@ const ScheduledDeliveriesScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [filterDate, setFilterDate] = useState<string>('');
 
-  // Función para cargar las entregas programadas (pedidos despachados)
-  const fetchDeliveries = async () => {
+  // Crear un mapa de rutas únicas con números consecutivos
+  const getRouteNumber = (rutaId: string): number => {
+    const uniqueRoutes = Array.from(new Set(filteredDeliveries.map(d => d.ruta_id)));
+    return uniqueRoutes.indexOf(rutaId) + 1;
+  };
+
+  // Función para validar formato de fecha YYYY-MM-DD
+  const isValidDateFormat = (dateString: string): boolean => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    return regex.test(dateString);
+  };
+
+  // Función para cargar las entregas programadas desde el servicio de logística
+  const fetchDeliveries = async (fecha: string) => {
+    // Solo hacer fetch si la fecha tiene el formato correcto
+    if (!isValidDateFormat(fecha)) {
+      console.log('Fecha inválida o vacía, no se hará fetch:', fecha);
+      return;
+    }
+
     try {
+      setLoading(true);
       setError(null);
-      const data = await getDispatchedOrders();
+      // Llamar al servicio con la fecha especificada
+      const data = await getDeliveries(fecha);
       console.log('Entregas programadas obtenidas:', JSON.stringify(data, null, 2));
       setDeliveries(data);
       setFilteredDeliveries(data);
     } catch (err) {
       console.error('Error fetching deliveries:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      setDeliveries([]);
+      setFilteredDeliveries([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Cargar entregas al montar el componente
+  // NO cargar entregas al montar - esperar a que el usuario seleccione una fecha válida
   useEffect(() => {
-    fetchDeliveries();
+    // Inicializar loading en false
+    setLoading(false);
   }, []);
 
-  // Filtrar entregas cuando cambia la fecha filtrada
+  // Cargar entregas cuando cambia la fecha filtrada (solo si tiene formato válido)
   useEffect(() => {
-    if (filterDate) {
-      console.log('Filtrando por fecha:', filterDate);
-      const filtered = deliveries.filter(delivery => {
-        if (delivery.fecha_compromiso) {
-          // Extraer solo la parte de fecha (YYYY-MM-DD)
-          // Manejar tanto formato ISO completo como solo fecha
-          let deliveryDate: string;
-          if (delivery.fecha_compromiso.includes('T')) {
-            // Formato ISO: "2024-10-27T00:00:00Z" o similar
-            deliveryDate = delivery.fecha_compromiso.split('T')[0];
-          } else {
-            // Formato simple: "2024-10-27"
-            deliveryDate = delivery.fecha_compromiso;
-          }
-          console.log('Comparando:', deliveryDate, 'con', filterDate);
-          return deliveryDate === filterDate;
-        }
-        return false;
-      });
-      console.log('Entregas filtradas:', filtered.length, 'de', deliveries.length);
-      setFilteredDeliveries(filtered);
-    } else {
-      console.log('Sin filtro, mostrando todas las entregas:', deliveries.length);
-      setFilteredDeliveries(deliveries);
+    if (filterDate && isValidDateFormat(filterDate)) {
+      console.log('Fecha seleccionada:', filterDate);
+      fetchDeliveries(filterDate);
+    } else if (filterDate === '') {
+      // Si se limpia el filtro, limpiar también los datos
+      setDeliveries([]);
+      setFilteredDeliveries([]);
     }
-  }, [filterDate, deliveries]);
+  }, [filterDate]);
 
   // Simula la recarga de datos
   const onRefresh = async () => {
+    if (!filterDate || !isValidDateFormat(filterDate)) {
+      // Si no hay fecha válida seleccionada, no recargar
+      return;
+    }
     setRefreshing(true);
-    await fetchDeliveries();
+    await fetchDeliveries(filterDate);
     setRefreshing(false);
   };
 
@@ -92,7 +110,8 @@ const ScheduledDeliveriesScreen = () => {
   const clearDateFilter = () => {
     setFilterDate('');
     setSelectedDate(new Date());
-    fetchDeliveries();
+    setDeliveries([]);
+    setFilteredDeliveries([]);
   };
 
   // Aplicar filtro de fecha
@@ -136,72 +155,171 @@ const ScheduledDeliveriesScreen = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // Navegar al detalle de la entrega
-  const handleDeliveryPress = (orderId: string) => {
-    router.push({
-      pathname: '/orders/detail',
-      params: { id: orderId }
-    });
+  // Función para obtener el emoji según el estado
+  const getStatusEmoji = (estado: string): string => {
+    switch (estado.toUpperCase()) {
+      case 'ENTREGADA':
+        return '✅';
+      case 'PENDIENTE':
+        return '⏳';
+      case 'EN_CAMINO':
+        return '🚚';
+      case 'CANCELADA':
+        return '❌';
+      default:
+        return '📦';
+    }
+  };
+
+  // Función para obtener la etiqueta del estado
+  const getStatusLabel = (estado: string): string => {
+    switch (estado.toUpperCase()) {
+      case 'ENTREGADA':
+        return t('delivered') || 'Entregada';
+      case 'PENDIENTE':
+        return t('pending') || 'Pendiente';
+      case 'EN_CAMINO':
+        return t('inTransit') || 'En camino';
+      case 'CANCELADA':
+        return t('cancelled') || 'Cancelada';
+      default:
+        return estado;
+    }
+  };
+
+  // Función para obtener el estilo según el estado
+  const getStatusStyle = (estado: string) => {
+    switch (estado.toUpperCase()) {
+      case 'ENTREGADA':
+        return { backgroundColor: '#E8F5E9' };
+      case 'PENDIENTE':
+        return { backgroundColor: '#FFF3E0' };
+      case 'EN_CAMINO':
+        return { backgroundColor: '#E3F2FD' };
+      case 'CANCELADA':
+        return { backgroundColor: '#FFEBEE' };
+      default:
+        return { backgroundColor: '#F5F5F5' };
+    }
   };
 
   // Renderizar cada item de entrega
-  const renderDeliveryItem = ({ item }: { item: Order }) => (
-    <TouchableOpacity
-      style={styles.deliveryCard}
-      onPress={() => handleDeliveryPress(item.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.deliveryHeader}>
-        <View style={styles.deliveryHeaderLeft}>
-          <Text style={styles.orderCode}>{item.codigo}</Text>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>🚚 {t('dispatched') || 'Despachado'}</Text>
+  const renderDeliveryItem = ({ item }: { item: Delivery }) => {
+    const routeNumber = getRouteNumber(item.ruta_id);
+    
+    return (
+      <View style={styles.deliveryCard}>
+        <View style={styles.deliveryHeader}>
+          <View style={styles.deliveryHeaderLeft}>
+            <Text style={styles.routeIdText}>🚚 Ruta #{routeNumber}</Text>
+            <Text style={styles.orderCode}>Parada #{item.orden}</Text>
+            <View style={[styles.statusBadge, getStatusStyle(item.estado)]}>
+              <Text style={styles.statusText}>{getStatusEmoji(item.estado)} {getStatusLabel(item.estado)}</Text>
+            </View>
+          </View>
+          <View style={styles.deliveryHeaderRight}>
+            <Text style={styles.cityText}>{item.ciudad}</Text>
           </View>
         </View>
-        <View style={styles.deliveryHeaderRight}>
-          <Text style={styles.totalAmount}>
-            ${Number(item.total || 0).toLocaleString('es-CO')}
-          </Text>
-        </View>
-      </View>
 
       <View style={styles.divider} />
 
       <View style={styles.deliveryInfo}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📦 {t('items') || 'Items'}:</Text>
-          <Text style={styles.infoValue}>{item.items?.length || 0} {t('items') || 'items'}</Text>
+          <Text style={styles.infoLabel}>� {t('address') || 'Dirección'}:</Text>
+          <Text style={styles.infoValue} numberOfLines={2}>{item.direccion}</Text>
         </View>
 
-        {item.fecha_compromiso && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📅 {t('deliveryDate') || 'Fecha de entrega'}:</Text>
-            <Text style={styles.infoValue}>{formatDate(item.fecha_compromiso)}</Text>
-          </View>
-        )}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>� {t('client') || 'Cliente'}:</Text>
+          <Text style={styles.infoValue}>ID: {item.cliente_id}</Text>
+        </View>
 
-        {item.observaciones && (
-          <View style={styles.observationsContainer}>
-            <Text style={styles.infoLabel}>📝 {t('observations') || 'Observaciones'}:</Text>
-            <Text style={styles.observationsText} numberOfLines={2}>
-              {item.observaciones}
-            </Text>
-          </View>
-        )}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>📦 {t('orders') || 'Pedidos'}:</Text>
+          <Text style={styles.infoValue}>{item.pedido_ids.length} {item.pedido_ids.length === 1 ? t('order') || 'pedido' : t('orders') || 'pedidos'}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>� {t('routeDate') || 'Fecha ruta'}:</Text>
+          <Text style={styles.infoValue}>{formatDate(item.fecha_ruta)}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>🚚 {t('routeStatus') || 'Estado ruta'}:</Text>
+          <Text style={styles.infoValue}>{item.estado_ruta}</Text>
+        </View>
       </View>
+    </View>
+    );
+  };
 
-      <View style={styles.cardFooter}>
-        <Text style={styles.viewDetailsText}>
-          {t('tapToViewDetails') || 'Toca para ver detalles'} →
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  // Vista de carga
-  if (loading) {
+  // Vista de carga (solo mostrar si hay una fecha válida y se está cargando)
+  if (loading && filterDate && isValidDateFormat(filterDate)) {
     return (
       <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>
+              {t('scheduledDeliveries') || 'Entregas Programadas'}
+            </Text>
+          </View>
+          <Text style={styles.subtitle}>Cargando...</Text>
+        </View>
+
+        {/* Filtro de fecha siempre visible */}
+        <View style={styles.filterContainer}>
+          {Platform.OS === 'web' ? (
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>
+                {t('filterByDate') || 'Filtrar por fecha:'}
+              </Text>
+              <TextInput
+                style={styles.dateInput}
+                value={filterDate}
+                onChangeText={setFilterDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#999"
+              />
+              {filterDate ? (
+                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>
+                {t('filterByDate') || 'Filtrar por fecha:'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                style={styles.dateButton}
+              >
+                <Text style={styles.dateButtonText}>
+                  {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                </Text>
+              </TouchableOpacity>
+              {filterDate ? (
+                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
+          )}
+        </View>
+
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#6750A4" />
           <Text style={styles.loadingText}>
@@ -228,14 +346,70 @@ const ScheduledDeliveriesScreen = () => {
           </View>
           <Text style={styles.subtitle}>0 entregas</Text>
         </View>
+
+        {/* Filtro de fecha siempre visible */}
+        <View style={styles.filterContainer}>
+          {Platform.OS === 'web' ? (
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>
+                {t('filterByDate') || 'Filtrar por fecha:'}
+              </Text>
+              <TextInput
+                style={styles.dateInput}
+                value={filterDate}
+                onChangeText={setFilterDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#999"
+              />
+              {filterDate ? (
+                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>
+                {t('filterByDate') || 'Filtrar por fecha:'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                style={styles.dateButton}
+              >
+                <Text style={styles.dateButtonText}>
+                  {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                </Text>
+              </TouchableOpacity>
+              {filterDate ? (
+                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
+          )}
+        </View>
+
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>
             {t('errorLoadingDeliveries') || 'Error al cargar entregas'}
           </Text>
           <Text style={styles.errorDetail}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchDeliveries}>
-            <Text style={styles.retryButtonText}>{t('retry') || 'Reintentar'}</Text>
-          </TouchableOpacity>
+          {filterDate && isValidDateFormat(filterDate) && (
+            <TouchableOpacity 
+              style={styles.retryButton} 
+              onPress={() => fetchDeliveries(filterDate)}
+            >
+              <Text style={styles.retryButtonText}>{t('retry') || 'Reintentar'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <BottomNavigationBar value={value} setValue={setValue} role={userRole} />
       </View>
@@ -243,7 +417,7 @@ const ScheduledDeliveriesScreen = () => {
   }
 
   // Vista vacía
-  if (deliveries.length === 0) {
+  if (deliveries.length === 0 && !loading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -257,13 +431,74 @@ const ScheduledDeliveriesScreen = () => {
           </View>
           <Text style={styles.subtitle}>0 entregas</Text>
         </View>
+        
+        {/* Filtro de fecha siempre visible */}
+        <View style={styles.filterContainer}>
+          {Platform.OS === 'web' ? (
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>
+                {t('filterByDate') || 'Filtrar por fecha:'}
+              </Text>
+              <TextInput
+                style={styles.dateInput}
+                value={filterDate}
+                onChangeText={setFilterDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#999"
+              />
+              {filterDate ? (
+                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>
+                {t('filterByDate') || 'Filtrar por fecha:'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                style={styles.dateButton}
+              >
+                <Text style={styles.dateButtonText}>
+                  {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                </Text>
+              </TouchableOpacity>
+              {filterDate ? (
+                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
+          )}
+        </View>
+
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📦</Text>
+          <Text style={styles.emptyIcon}>�</Text>
           <Text style={styles.emptyTitle}>
-            {t('noDeliveries') || 'No hay entregas programadas'}
+            {filterDate && isValidDateFormat(filterDate)
+              ? (t('noDeliveries') || 'No hay entregas programadas')
+              : filterDate && !isValidDateFormat(filterDate)
+              ? (t('invalidDateFormat') || 'Formato de fecha inválido')
+              : (t('selectDatePrompt') || 'Ingresa una fecha para filtrar')
+            }
           </Text>
           <Text style={styles.emptyMessage}>
-            {t('noDeliveriesMessage') || 'Actualmente no tienes entregas pendientes'}
+            {filterDate && isValidDateFormat(filterDate)
+              ? (t('noDeliveriesMessage') || 'No hay entregas para esta fecha')
+              : filterDate && !isValidDateFormat(filterDate)
+              ? (t('useDateFormat') || 'Por favor usa el formato YYYY-MM-DD (ej: 2025-10-29)')
+              : (t('selectDateMessage') || 'Ingresa una fecha en formato YYYY-MM-DD para consultar las entregas programadas')
+            }
           </Text>
         </View>
         <BottomNavigationBar value={value} setValue={setValue} role={userRole} />
@@ -446,6 +681,12 @@ const styles = StyleSheet.create({
   deliveryHeaderRight: {
     alignItems: 'flex-end',
   },
+  routeIdText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6750A4',
+    marginBottom: 4,
+  },
   orderCode: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -468,6 +709,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#6750A4',
+  },
+  cityText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
   },
   divider: {
     height: 1,
@@ -645,6 +891,37 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#FFFFFF',
     fontWeight: 'bold',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dateInput: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#6750A4',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: '#333',
+    backgroundColor: '#F8F5FF',
+  },
+  dateButton: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#6750A4',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    backgroundColor: '#F8F5FF',
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#6750A4',
+    fontWeight: '500',
   },
 });
 

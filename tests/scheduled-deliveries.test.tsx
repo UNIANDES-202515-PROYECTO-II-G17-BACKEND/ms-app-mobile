@@ -29,16 +29,26 @@ jest.mock('react-i18next', () => ({
         items: 'items',
         deliveryDate: 'Fecha de entrega',
         observations: 'Observaciones',
+        address: 'Dirección',
+        client: 'Cliente',
+        orders: 'Pedidos',
+        order: 'pedido',
+        routeDate: 'Fecha ruta',
+        routeStatus: 'Estado ruta',
+        delivered: 'Entregada',
+        pending: 'Pendiente',
+        inTransit: 'En camino',
+        cancelled: 'Cancelada',
       };
       return translations[key] || key;
     },
   }),
 }));
 
-// Mock orderService
-const mockGetDispatchedOrders = jest.fn();
-jest.mock('../app/services/orderService', () => ({
-  getDispatchedOrders: jest.fn().mockImplementation((...args) => mockGetDispatchedOrders(...args)),
+// Mock logisticsService
+const mockGetDeliveries = jest.fn();
+jest.mock('../app/services/logisticsService', () => ({
+  getDeliveries: jest.fn().mockImplementation((...args) => mockGetDeliveries(...args)),
 }));
 
 // Mock BottomNavigationBar
@@ -59,90 +69,90 @@ import ScheduledDeliveriesScreen from '../app/scheduled-deliveries';
 describe('ScheduledDeliveriesScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetDispatchedOrders.mockReset();
+    mockGetDeliveries.mockReset();
     console.log = jest.fn();
     console.error = jest.fn();
+    // Forzar Platform.OS a 'web' para que se muestre el TextInput
+    Platform.OS = 'web';
   });
 
   const mockDeliveries = [
     {
-      id: '1',
-      codigo: 'SO-2025-001',
-      tipo: 'VENTA',
-      estado: 'DESPACHADO',
-      proveedor_id: null,
-      oc_id: null,
+      id: 'stop-1',
       cliente_id: 123,
-      vendedor_id: 456,
-      bodega_origen_id: 'warehouse-1',
-      bodega_destino_id: null,
-      total: '1000000.00',
-      fecha_compromiso: '2025-10-30T10:00:00Z',
-      observaciones: 'Entrega urgente',
-      items: [
-        {
-          producto_id: 'prod-1',
-          cantidad: 5,
-          precio_unitario: 200000,
-          impuesto_pct: 19,
-          descuento_pct: null,
-          sku: 'SKU-001',
-        },
-      ],
+      direccion: 'Calle 123 #45-67',
+      ciudad: 'Bogotá',
+      estado: 'PENDIENTE',
+      orden: 1,
+      pedido_ids: ['order-1', 'order-2'],
+      ruta_id: 'route-1',
+      fecha_ruta: '2025-10-30',
+      estado_ruta: 'EN_PROGRESO',
     },
     {
-      id: '2',
-      codigo: 'SO-2025-002',
-      tipo: 'VENTA',
-      estado: 'DESPACHADO',
-      proveedor_id: null,
-      oc_id: null,
+      id: 'stop-2',
       cliente_id: 789,
-      vendedor_id: 456,
-      bodega_origen_id: 'warehouse-2',
-      bodega_destino_id: null,
-      total: '2500000.00',
-      fecha_compromiso: '2025-10-31T14:00:00Z',
-      items: [
-        {
-          producto_id: 'prod-2',
-          cantidad: 10,
-          precio_unitario: 250000,
-          impuesto_pct: 19,
-          descuento_pct: null,
-          sku: 'SKU-002',
-        },
-      ],
+      direccion: 'Carrera 7 #12-34',
+      ciudad: 'Medellín',
+      estado: 'ENTREGADA',
+      orden: 2,
+      pedido_ids: ['order-3'],
+      ruta_id: 'route-1',
+      fecha_ruta: '2025-10-31',
+      estado_ruta: 'FINALIZADA',
     },
   ];
 
   it('renders deliveries list correctly', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
 
+    // Verificar que se muestra el estado inicial sin datos
     await waitFor(() => {
       expect(getByText('Entregas Programadas')).toBeTruthy();
     });
 
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
+
+    // Esperar a que se carguen las entregas
     await waitFor(() => {
-      expect(getByText('SO-2025-001')).toBeTruthy();
-      expect(getByText('SO-2025-002')).toBeTruthy();
+      expect(getByText('Parada #1')).toBeTruthy();
+      expect(getByText('Parada #2')).toBeTruthy();
     });
   });
 
-  it('shows loading indicator while fetching deliveries', () => {
-    mockGetDispatchedOrders.mockImplementation(() => new Promise(() => {}));
+  it('shows loading indicator while fetching deliveries', async () => {
+    mockGetDeliveries.mockImplementation(() => new Promise(() => {}));
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
 
-    expect(getByText('Cargando entregas programadas...')).toBeTruthy();
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
+
+    // Verificar que se muestra el indicador de carga
+    await waitFor(() => {
+      expect(getByText('Cargando entregas programadas...')).toBeTruthy();
+    });
   });
 
   it('displays error message when deliveries fetch fails', async () => {
-    mockGetDispatchedOrders.mockRejectedValueOnce(new Error('Network error'));
+    mockGetDeliveries.mockRejectedValueOnce(new Error('Network error'));
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
       expect(getByText('Error al cargar entregas')).toBeTruthy();
@@ -150,87 +160,116 @@ describe('ScheduledDeliveriesScreen', () => {
   });
 
   it('shows empty state when no deliveries exist', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce([]);
+    mockGetDeliveries.mockResolvedValueOnce([]);
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
       expect(getByText('No hay entregas programadas')).toBeTruthy();
-      expect(getByText('Actualmente no tienes entregas pendientes')).toBeTruthy();
     });
   });
 
   it('navigates to order detail when delivery card is pressed', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
-      expect(getByText('SO-2025-001')).toBeTruthy();
+      expect(getByText('Parada #1')).toBeTruthy();
     });
 
-    const deliveryCard = getByText('SO-2025-001');
+    // Ya no se navega porque eliminamos el TouchableOpacity
+    // Este test ya no es relevante, pero lo mantenemos para verificar que no se puede hacer clic
+    const deliveryCard = getByText('Parada #1');
     fireEvent.press(deliveryCard);
 
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/orders/detail',
-      params: { id: '1' },
-    });
+    // Verificar que NO se llamó a push porque las tarjetas ya no son clickeables
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('refreshes deliveries when pull-to-refresh is triggered', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
 
-    const { getByTestId, getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
 
-    await waitFor(() => {
-      expect(getByText('SO-2025-001')).toBeTruthy();
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
     });
 
-    // Mock second call for refresh
-    mockGetDispatchedOrders.mockResolvedValueOnce([mockDeliveries[0]]);
+    await waitFor(() => {
+      expect(getByText('Parada #1')).toBeTruthy();
+    });
 
-    // Note: In a real scenario, you would trigger the FlatList's refresh
-    // For now, we just verify the function is called
-    expect(mockGetDispatchedOrders).toHaveBeenCalledTimes(1);
+    expect(mockGetDeliveries).toHaveBeenCalledTimes(1);
   });
 
   it('displays delivery information correctly', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce([mockDeliveries[0]]);
+    mockGetDeliveries.mockResolvedValueOnce([mockDeliveries[0]]);
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
-      expect(getByText('SO-2025-001')).toBeTruthy();
-      expect(getByText('$1.000.000')).toBeTruthy();
-      expect(getByText('1 items')).toBeTruthy();
-      expect(getByText('Entrega urgente')).toBeTruthy();
+      expect(getByText('Parada #1')).toBeTruthy();
+      expect(getByText('Bogotá')).toBeTruthy();
+      expect(getByText('Calle 123 #45-67')).toBeTruthy();
+      expect(getByText('2 Pedidos')).toBeTruthy();
     });
   });
 
   it('formats dates correctly', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce([mockDeliveries[0]]);
+    mockGetDeliveries.mockResolvedValueOnce([mockDeliveries[0]]);
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
-      // Fecha de compromiso: 30/10/2025
+      // Fecha de ruta: 30/10/2025
       expect(getByText('30/10/2025')).toBeTruthy();
     });
   });
 
   it('shows retry button on error', async () => {
-    mockGetDispatchedOrders.mockRejectedValueOnce(new Error('Network error'));
+    mockGetDeliveries.mockRejectedValueOnce(new Error('Network error'));
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
       expect(getByText('Error al cargar entregas')).toBeTruthy();
       expect(getByText('Reintentar')).toBeTruthy();
     });
 
-    // Reset mock for retry
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
 
     const retryButton = getByText('Reintentar');
     
@@ -239,14 +278,20 @@ describe('ScheduledDeliveriesScreen', () => {
     });
 
     await waitFor(() => {
-      expect(mockGetDispatchedOrders).toHaveBeenCalledTimes(2);
+      expect(mockGetDeliveries).toHaveBeenCalledTimes(2);
     });
   });
 
   it('displays delivery count in subtitle', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
 
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
+
+    // Simular entrada de fecha válida
+    const dateInput = getByPlaceholderText('YYYY-MM-DD');
+    await act(async () => {
+      fireEvent.changeText(dateInput, '2025-10-30');
+    });
 
     await waitFor(() => {
       expect(getByText('Entregas Programadas')).toBeTruthy();
@@ -254,162 +299,94 @@ describe('ScheduledDeliveriesScreen', () => {
     });
   });
 
-  it('calls getDispatchedOrders without parameters', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
-
-    render(<ScheduledDeliveriesScreen />);
-
-    await waitFor(() => {
-      expect(mockGetDispatchedOrders).toHaveBeenCalledWith();
-    });
-  });
-
   it('filters deliveries by date when date is entered', async () => {
-    // Mock Platform.OS to be 'web' for this test
     Platform.OS = 'web';
     
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
-
+    // Primero sin fecha
     const { getByPlaceholderText, getByText, queryByText } = render(<ScheduledDeliveriesScreen />);
 
-    // Esperar a que carguen las entregas
+    // Verificar estado inicial sin fecha
     await waitFor(() => {
-      expect(getByText('2 entregas')).toBeTruthy();
+      expect(getByText('0 entregas')).toBeTruthy();
     });
 
-    // Buscar el input de fecha
+    // Mock para cuando se ingresa la primera fecha
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
+
     const dateInput = getByPlaceholderText('YYYY-MM-DD');
 
-    // Filtrar por fecha específica
     await act(async () => {
       fireEvent.changeText(dateInput, '2025-10-30');
     });
 
-    // Debe mostrar solo 1 entrega (la que coincide con la fecha)
     await waitFor(() => {
-      expect(getByText('1 entrega')).toBeTruthy();
-      expect(getByText('SO-2025-001')).toBeTruthy();
-      expect(queryByText('SO-2025-002')).toBeFalsy();
+      expect(getByText('Parada #1')).toBeTruthy();
+      expect(getByText('Parada #2')).toBeTruthy();
     });
   });
 
   it('shows all deliveries when filter is cleared', async () => {
-    // Mock Platform.OS to be 'web' for this test
     Platform.OS = 'web';
     
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
-
     const { getByPlaceholderText, getByText } = render(<ScheduledDeliveriesScreen />);
 
-    // Esperar a que carguen las entregas
-    await waitFor(() => {
-      expect(getByText('2 entregas')).toBeTruthy();
-    });
+    // Mock para cuando se ingresa fecha
+    mockGetDeliveries.mockResolvedValueOnce(mockDeliveries);
 
-    // Buscar el input de fecha y aplicar filtro
     const dateInput = getByPlaceholderText('YYYY-MM-DD');
+
     await act(async () => {
       fireEvent.changeText(dateInput, '2025-10-30');
     });
 
-    // Verificar que se filtró
-    await waitFor(() => {
-      expect(getByText('1 entrega')).toBeTruthy();
-    });
-
-    // Limpiar filtro
-    await act(async () => {
-      fireEvent.changeText(dateInput, '');
-    });
-
-    // Debe mostrar todas las entregas nuevamente
     await waitFor(() => {
       expect(getByText('2 entregas')).toBeTruthy();
+    });
+
+    // Hacer clic en el botón de limpiar (✕)
+    const clearButton = getByText('✕');
+    await act(async () => {
+      fireEvent.press(clearButton);
+    });
+
+    await waitFor(() => {
+      expect(getByText('0 entregas')).toBeTruthy();
     });
   });
 
   it('shows empty state after filtering with no results', async () => {
-    // Mock Platform.OS to be 'web' for this test
     Platform.OS = 'web';
     
-    mockGetDispatchedOrders.mockResolvedValueOnce(mockDeliveries);
-
     const { getByPlaceholderText, getByText, queryByText } = render(<ScheduledDeliveriesScreen />);
 
-    // Esperar a que carguen las entregas
-    await waitFor(() => {
-      expect(getByText('2 entregas')).toBeTruthy();
-    });
+    // Mock para fecha sin resultados
+    mockGetDeliveries.mockResolvedValueOnce([]);
 
-    // Filtrar por una fecha sin resultados
     const dateInput = getByPlaceholderText('YYYY-MM-DD');
     await act(async () => {
       fireEvent.changeText(dateInput, '2025-12-31');
     });
 
-    // Debe mostrar 0 entregas
     await waitFor(() => {
       expect(getByText('0 entregas')).toBeTruthy();
-      expect(queryByText('SO-2025-001')).toBeFalsy();
-      expect(queryByText('SO-2025-002')).toBeFalsy();
+      expect(queryByText('Parada #1')).toBeFalsy();
+      expect(queryByText('Parada #2')).toBeFalsy();
     });
   });
 
-  it('filters deliveries correctly with ISO date format', async () => {
-    // Mock Platform.OS to be 'web' for this test
-    Platform.OS = 'web';
-    
-    const deliveriesWithISO = [
-      {
-        ...mockDeliveries[0],
-        fecha_compromiso: '2025-10-30T00:00:00Z',
-      },
-    ];
-    mockGetDispatchedOrders.mockResolvedValueOnce(deliveriesWithISO);
+  it('shows single delivery count correctly', async () => {
+    mockGetDeliveries.mockResolvedValueOnce([mockDeliveries[0]]);
 
-    const { getByPlaceholderText, getByText } = render(<ScheduledDeliveriesScreen />);
+    const { getByText, getByPlaceholderText } = render(<ScheduledDeliveriesScreen />);
 
-    await waitFor(() => {
-      expect(getByText('1 entrega')).toBeTruthy();
-    });
-
-    // Filtrar por fecha
+    // Simular entrada de fecha válida
     const dateInput = getByPlaceholderText('YYYY-MM-DD');
     await act(async () => {
       fireEvent.changeText(dateInput, '2025-10-30');
     });
 
-    // Debe encontrar la entrega
     await waitFor(() => {
       expect(getByText('1 entrega')).toBeTruthy();
-      expect(getByText('SO-2025-001')).toBeTruthy();
-    });
-  });
-
-  it('handles deliveries without fecha_compromiso', async () => {
-    const deliveryWithoutDate = {
-      ...mockDeliveries[0],
-      fecha_compromiso: undefined,
-    };
-    mockGetDispatchedOrders.mockResolvedValueOnce([deliveryWithoutDate]);
-
-    const { getByText, queryByText } = render(<ScheduledDeliveriesScreen />);
-
-    await waitFor(() => {
-      expect(getByText('SO-2025-001')).toBeTruthy();
-      // Cuando no hay fecha_compromiso, el bloque condicional no se renderiza
-      // Por lo tanto no debe aparecer el label "Fecha de entrega"
-      expect(queryByText('Fecha de entrega')).toBeFalsy();
-    });
-  });
-
-  it('shows single delivery count correctly', async () => {
-    mockGetDispatchedOrders.mockResolvedValueOnce([mockDeliveries[0]]);
-
-    const { getByText } = render(<ScheduledDeliveriesScreen />);
-
-    await waitFor(() => {
-      expect(getByText('1 entrega')).toBeTruthy(); // Singular
     });
   });
 });
