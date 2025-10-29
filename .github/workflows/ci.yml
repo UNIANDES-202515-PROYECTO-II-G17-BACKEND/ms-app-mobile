@@ -41,7 +41,12 @@ jobs:
 
       # --- Pruebas unitarias con cobertura ---
       - name: Tests with coverage (Jest)
-        run: >
-          npm run -s test -- --ci --runInBand --coverage
-          --coverageReporters=text,lcov
-          --coverageThreshold='{"global":{"lines":70,"statements":70}}'
+        run: npm run -s test -- --ci --runInBand --coverage --coverageReporters=text --coverageReporters=json-summary --coverageThreshold='{"global":{"lines":70,"statements":70}}'
+
+      # --- Mostrar resumen de cobertura ---
+      - name: Coverage Summary
+        run: |
+          echo "📊 Test Coverage Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          node -e "const c=require('./coverage/coverage-summary.json').total; console.log('✅ Lines: ' + c.lines.pct + '%');"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -49,6 +49,8 @@ export interface Order {
   items: OrderItem[];
   fecha_creacion?: string;
   fecha_actualizacion?: string;
+  fecha_compromiso?: string;
+  observaciones?: string;
   direccion?: string;
 }
 
@@ -137,10 +139,44 @@ export const getOrders = async (
     throw new Error(`Failed to fetch orders: ${response.status} ${text}`);
   }
 
-  return await response.json();
+  const orders = await response.json();
+  
+  // Convertir precio_unitario de string a número en los items
+  return orders.map((order: Order) => ({
+    ...order,
+    items: order.items.map(item => ({
+      ...item,
+      precio_unitario: typeof item.precio_unitario === 'string' 
+        ? parseFloat(item.precio_unitario) 
+        : item.precio_unitario,
+      impuesto_pct: typeof item.impuesto_pct === 'string'
+        ? parseFloat(item.impuesto_pct)
+        : item.impuesto_pct,
+      descuento_pct: item.descuento_pct && typeof item.descuento_pct === 'string'
+        ? parseFloat(item.descuento_pct)
+        : item.descuento_pct,
+    })),
+  }));
+};
+
+/**
+ * Obtiene los pedidos con estado DESPACHADO
+ * @param country - País del usuario (opcional, se obtiene de storage si no se provee)
+ * @param params - Parámetros opcionales (limit, offset)
+ * @returns Promise con la lista de pedidos despachados
+ */
+export const getDispatchedOrders = async (
+  country?: string,
+  params?: Omit<GetOrdersParams, 'estado'>
+): Promise<Order[]> => {
+  return getOrders(country, {
+    ...params,
+    estado: 'DESPACHADO',
+  });
 };
 
 export default {
   createOrder,
   getOrders,
+  getDispatchedOrders,
 };

@@ -75,8 +75,8 @@ describe('OrdersScreen', () => {
         {
           producto_id: 'prod-1',
           cantidad: 5,
-          precio_unitario: '200.00',
-          impuesto_pct: '19.00',
+          precio_unitario: 200.00,
+          impuesto_pct: 19.00,
           descuento_pct: null,
           sku: 'SKU-001',
         },
@@ -98,8 +98,8 @@ describe('OrdersScreen', () => {
         {
           producto_id: 'prod-2',
           cantidad: 10,
-          precio_unitario: '200.00',
-          impuesto_pct: '19.00',
+          precio_unitario: 200.00,
+          impuesto_pct: 19.00,
           descuento_pct: null,
           sku: 'SKU-002',
         },
