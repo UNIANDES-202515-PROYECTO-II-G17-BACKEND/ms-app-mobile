@@ -272,51 +272,64 @@ const ScheduledDeliveriesScreen = () => {
 
         {/* Filtro de fecha siempre visible */}
         <View style={styles.filterContainer}>
-          {Platform.OS === 'web' ? (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>
-                {t('filterByDate') || 'Filtrar por fecha:'}
-              </Text>
+          <Text style={styles.filterLabel}>
+            {t('filterByDate') || 'Filtrar por fecha'}
+          </Text>
+          <View style={styles.dateFilterRow}>
+            {Platform.OS === 'web' ? (
               <TextInput
-                style={styles.dateInput}
+                style={styles.datePickerButton}
                 value={filterDate}
                 onChangeText={setFilterDate}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor="#999"
               />
-              {filterDate ? (
-                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ) : (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>
-                {t('filterByDate') || 'Filtrar por fecha:'}
-              </Text>
+            ) : (
               <TouchableOpacity
                 onPress={() => setShowDatePicker(true)}
-                style={styles.dateButton}
+                style={styles.datePickerButton}
               >
-                <Text style={styles.dateButtonText}>
-                  {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                <Text style={styles.datePickerButtonText}>
+                  📅 {filterDate || (t('selectDate') || 'Seleccionar fecha')}
                 </Text>
               </TouchableOpacity>
-              {filterDate ? (
-                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={selectedDate}
-                  mode="date"
-                  display="default"
-                  onChange={onDateChange}
-                />
+            )}
+            
+            {filterDate !== '' && (
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={clearDateFilter}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {showDatePicker && Platform.OS !== 'web' && (
+            <>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+              />
+              {Platform.OS === 'ios' && (
+                <View style={styles.datePickerActions}>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.applyButton}
+                    onPress={applyDateFilter}
+                  >
+                    <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
-            </View>
+            </>
           )}
         </View>
 
@@ -349,51 +362,64 @@ const ScheduledDeliveriesScreen = () => {
 
         {/* Filtro de fecha siempre visible */}
         <View style={styles.filterContainer}>
-          {Platform.OS === 'web' ? (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>
-                {t('filterByDate') || 'Filtrar por fecha:'}
-              </Text>
+          <Text style={styles.filterLabel}>
+            {t('filterByDate') || 'Filtrar por fecha'}
+          </Text>
+          <View style={styles.dateFilterRow}>
+            {Platform.OS === 'web' ? (
               <TextInput
-                style={styles.dateInput}
+                style={styles.datePickerButton}
                 value={filterDate}
                 onChangeText={setFilterDate}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor="#999"
               />
-              {filterDate ? (
-                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ) : (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>
-                {t('filterByDate') || 'Filtrar por fecha:'}
-              </Text>
+            ) : (
               <TouchableOpacity
                 onPress={() => setShowDatePicker(true)}
-                style={styles.dateButton}
+                style={styles.datePickerButton}
               >
-                <Text style={styles.dateButtonText}>
-                  {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                <Text style={styles.datePickerButtonText}>
+                  📅 {filterDate || (t('selectDate') || 'Seleccionar fecha')}
                 </Text>
               </TouchableOpacity>
-              {filterDate ? (
-                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={selectedDate}
-                  mode="date"
-                  display="default"
-                  onChange={onDateChange}
-                />
+            )}
+            
+            {filterDate !== '' && (
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={clearDateFilter}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {showDatePicker && Platform.OS !== 'web' && (
+            <>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+              />
+              {Platform.OS === 'ios' && (
+                <View style={styles.datePickerActions}>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.applyButton}
+                    onPress={applyDateFilter}
+                  >
+                    <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
-            </View>
+            </>
           )}
         </View>
 
@@ -434,56 +460,69 @@ const ScheduledDeliveriesScreen = () => {
         
         {/* Filtro de fecha siempre visible */}
         <View style={styles.filterContainer}>
-          {Platform.OS === 'web' ? (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>
-                {t('filterByDate') || 'Filtrar por fecha:'}
-              </Text>
+          <Text style={styles.filterLabel}>
+            {t('filterByDate') || 'Filtrar por fecha'}
+          </Text>
+          <View style={styles.dateFilterRow}>
+            {Platform.OS === 'web' ? (
               <TextInput
-                style={styles.dateInput}
+                style={styles.datePickerButton}
                 value={filterDate}
                 onChangeText={setFilterDate}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor="#999"
               />
-              {filterDate ? (
-                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ) : (
-            <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>
-                {t('filterByDate') || 'Filtrar por fecha:'}
-              </Text>
+            ) : (
               <TouchableOpacity
                 onPress={() => setShowDatePicker(true)}
-                style={styles.dateButton}
+                style={styles.datePickerButton}
               >
-                <Text style={styles.dateButtonText}>
-                  {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                <Text style={styles.datePickerButtonText}>
+                  📅 {filterDate || (t('selectDate') || 'Seleccionar fecha')}
                 </Text>
               </TouchableOpacity>
-              {filterDate ? (
-                <TouchableOpacity onPress={clearDateFilter} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={selectedDate}
-                  mode="date"
-                  display="default"
-                  onChange={onDateChange}
-                />
+            )}
+            
+            {filterDate !== '' && (
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={clearDateFilter}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {showDatePicker && Platform.OS !== 'web' && (
+            <>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+              />
+              {Platform.OS === 'ios' && (
+                <View style={styles.datePickerActions}>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.applyButton}
+                    onPress={applyDateFilter}
+                  >
+                    <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
-            </View>
+            </>
           )}
         </View>
 
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>�</Text>
+          <Text style={styles.emptyIcon}>🚚</Text>
           <Text style={styles.emptyTitle}>
             {filterDate && isValidDateFormat(filterDate)
               ? (t('noDeliveries') || 'No hay entregas programadas')
@@ -525,7 +564,7 @@ const ScheduledDeliveriesScreen = () => {
 
       {/* Filtro de fecha */}
       <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>{t('filterByDate') || 'Filtrar por fecha'}:</Text>
+        <Text style={styles.filterLabel}>{t('filterByDate') || 'Filtrar por fecha'}</Text>
         <View style={styles.dateFilterRow}>
           {Platform.OS === 'web' ? (
             // Input HTML para web
@@ -891,37 +930,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#FFFFFF',
     fontWeight: 'bold',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dateInput: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderColor: '#6750A4',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: '#333',
-    backgroundColor: '#F8F5FF',
-  },
-  dateButton: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderColor: '#6750A4',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    backgroundColor: '#F8F5FF',
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#6750A4',
-    fontWeight: '500',
   },
 });
 
