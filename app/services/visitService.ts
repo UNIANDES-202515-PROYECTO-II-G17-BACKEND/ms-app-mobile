@@ -11,7 +11,7 @@ export interface Visit {
   ciudad: string;
   contacto: string;
   fecha: string;
-  estado: 'pendiente' | 'completada' | 'cancelada';
+  estado: 'pendiente' | 'completada' | 'cancelada' | 'finalizada';
 }
 
 export interface CreateVisitRequest {
@@ -26,7 +26,11 @@ export interface CreateVisitDetailRequest {
   atendido_por: string;
   hallazgos: string;
   sugerencias_producto: string;
-  foto?: any; // Opcional - será agregado en el futuro
+  foto?: {
+    uri: string;
+    type: string;
+    name: string;
+  };
 }
 
 export interface GetVisitsParams {
@@ -171,10 +175,15 @@ export const createVisitDetail = async (
     formData.append('hallazgos', detailData.hallazgos);
     formData.append('sugerencias_producto', detailData.sugerencias_producto);
     
-    // Foto es opcional, por ahora no se envía
-    // if (detailData.foto) {
-    //   formData.append('foto', detailData.foto);
-    // }
+    // Agregar foto si existe
+    if (detailData.foto) {
+      formData.append('foto', detailData.foto as any);
+      console.log('Foto agregada al FormData:', {
+        uri: detailData.foto.uri,
+        type: detailData.foto.type,
+        name: detailData.foto.name,
+      });
+    }
     
     const url = `${BASE_URL}/visitas/${visitId}/detalle`;
     

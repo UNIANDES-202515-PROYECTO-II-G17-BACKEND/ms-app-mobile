@@ -3,15 +3,15 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
-  FlatList,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    FlatList,
+    Platform,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import BottomNavigationBar from './common/BottomNavigationBar';
 import { useUserRole } from './hooks/useUserRole';
@@ -175,13 +175,13 @@ const ScheduledDeliveriesScreen = () => {
   const getStatusLabel = (estado: string): string => {
     switch (estado.toUpperCase()) {
       case 'ENTREGADA':
-        return t('delivered') || 'Entregada';
+        return t('delivered');
       case 'PENDIENTE':
-        return t('pending') || 'Pendiente';
+        return t('pending');
       case 'EN_CAMINO':
-        return t('inTransit') || 'En camino';
+        return t('inTransit');
       case 'CANCELADA':
-        return t('cancelled') || 'Cancelada';
+        return t('cancelled');
       default:
         return estado;
     }
@@ -211,8 +211,8 @@ const ScheduledDeliveriesScreen = () => {
       <View style={styles.deliveryCard}>
         <View style={styles.deliveryHeader}>
           <View style={styles.deliveryHeaderLeft}>
-            <Text style={styles.routeIdText}>🚚 Ruta #{routeNumber}</Text>
-            <Text style={styles.orderCode}>Parada #{item.orden}</Text>
+            <Text style={styles.routeIdText}>🚚 {t('route')} #{routeNumber}</Text>
+            <Text style={styles.orderCode}>{t('stop')} #{item.orden}</Text>
             <View style={[styles.statusBadge, getStatusStyle(item.estado)]}>
               <Text style={styles.statusText}>{getStatusEmoji(item.estado)} {getStatusLabel(item.estado)}</Text>
             </View>
@@ -226,27 +226,27 @@ const ScheduledDeliveriesScreen = () => {
 
       <View style={styles.deliveryInfo}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>� {t('address') || 'Dirección'}:</Text>
+          <Text style={styles.infoLabel}>📍 {t('address')}:</Text>
           <Text style={styles.infoValue} numberOfLines={2}>{item.direccion}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>� {t('client') || 'Cliente'}:</Text>
+          <Text style={styles.infoLabel}>👤 {t('client')}:</Text>
           <Text style={styles.infoValue}>ID: {item.cliente_id}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📦 {t('orders') || 'Pedidos'}:</Text>
-          <Text style={styles.infoValue}>{item.pedido_ids.length} {item.pedido_ids.length === 1 ? t('order') || 'pedido' : t('orders') || 'pedidos'}</Text>
+          <Text style={styles.infoLabel}>📦 {t('orders')}:</Text>
+          <Text style={styles.infoValue}>{item.pedido_ids.length} {item.pedido_ids.length === 1 ? t('order') : t('orders')}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>� {t('routeDate') || 'Fecha ruta'}:</Text>
+          <Text style={styles.infoLabel}>📅 {t('routeDate')}:</Text>
           <Text style={styles.infoValue}>{formatDate(item.fecha_ruta)}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>🚚 {t('routeStatus') || 'Estado ruta'}:</Text>
+          <Text style={styles.infoLabel}>🚚 {t('routeStatus')}:</Text>
           <Text style={styles.infoValue}>{item.estado_ruta}</Text>
         </View>
       </View>
@@ -273,7 +273,7 @@ const ScheduledDeliveriesScreen = () => {
         {/* Filtro de fecha siempre visible */}
         <View style={styles.filterContainer}>
           <Text style={styles.filterLabel}>
-            {t('filterByDate') || 'Filtrar por fecha'}
+            {t('filterByDate')}
           </Text>
           <View style={styles.dateFilterRow}>
             {Platform.OS === 'web' ? (
@@ -290,7 +290,7 @@ const ScheduledDeliveriesScreen = () => {
                 style={styles.datePickerButton}
               >
                 <Text style={styles.datePickerButtonText}>
-                  📅 {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                  📅 {filterDate || t('selectDate')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -319,13 +319,13 @@ const ScheduledDeliveriesScreen = () => {
                     style={styles.cancelButton}
                     onPress={() => setShowDatePicker(false)}
                   >
-                    <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                    <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.applyButton}
                     onPress={applyDateFilter}
                   >
-                    <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                    <Text style={styles.applyButtonText}>{t('apply')}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -336,7 +336,7 @@ const ScheduledDeliveriesScreen = () => {
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#6750A4" />
           <Text style={styles.loadingText}>
-            {t('loadingDeliveries') || 'Cargando entregas programadas...'}
+            {t('loadingDeliveries')}
           </Text>
         </View>
         <BottomNavigationBar value={value} setValue={setValue} role={userRole} />
@@ -363,7 +363,7 @@ const ScheduledDeliveriesScreen = () => {
         {/* Filtro de fecha siempre visible */}
         <View style={styles.filterContainer}>
           <Text style={styles.filterLabel}>
-            {t('filterByDate') || 'Filtrar por fecha'}
+            {t('filterByDate')}
           </Text>
           <View style={styles.dateFilterRow}>
             {Platform.OS === 'web' ? (
@@ -380,7 +380,7 @@ const ScheduledDeliveriesScreen = () => {
                 style={styles.datePickerButton}
               >
                 <Text style={styles.datePickerButtonText}>
-                  📅 {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                  📅 {filterDate || t('selectDate')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -409,13 +409,13 @@ const ScheduledDeliveriesScreen = () => {
                     style={styles.cancelButton}
                     onPress={() => setShowDatePicker(false)}
                   >
-                    <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                    <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.applyButton}
                     onPress={applyDateFilter}
                   >
-                    <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                    <Text style={styles.applyButtonText}>{t('apply')}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -425,7 +425,7 @@ const ScheduledDeliveriesScreen = () => {
 
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>
-            {t('errorLoadingDeliveries') || 'Error al cargar entregas'}
+            {t('errorLoadingDeliveries')}
           </Text>
           <Text style={styles.errorDetail}>{error}</Text>
           {filterDate && isValidDateFormat(filterDate) && (
@@ -433,7 +433,7 @@ const ScheduledDeliveriesScreen = () => {
               style={styles.retryButton} 
               onPress={() => fetchDeliveries(filterDate)}
             >
-              <Text style={styles.retryButtonText}>{t('retry') || 'Reintentar'}</Text>
+              <Text style={styles.retryButtonText}>{t('retry')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -461,7 +461,7 @@ const ScheduledDeliveriesScreen = () => {
         {/* Filtro de fecha siempre visible */}
         <View style={styles.filterContainer}>
           <Text style={styles.filterLabel}>
-            {t('filterByDate') || 'Filtrar por fecha'}
+            {t('filterByDate')}
           </Text>
           <View style={styles.dateFilterRow}>
             {Platform.OS === 'web' ? (
@@ -478,7 +478,7 @@ const ScheduledDeliveriesScreen = () => {
                 style={styles.datePickerButton}
               >
                 <Text style={styles.datePickerButtonText}>
-                  📅 {filterDate || (t('selectDate') || 'Seleccionar fecha')}
+                  📅 {filterDate || t('selectDate')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -507,13 +507,13 @@ const ScheduledDeliveriesScreen = () => {
                     style={styles.cancelButton}
                     onPress={() => setShowDatePicker(false)}
                   >
-                    <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                    <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.applyButton}
                     onPress={applyDateFilter}
                   >
-                    <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                    <Text style={styles.applyButtonText}>{t('apply')}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -525,18 +525,18 @@ const ScheduledDeliveriesScreen = () => {
           <Text style={styles.emptyIcon}>🚚</Text>
           <Text style={styles.emptyTitle}>
             {filterDate && isValidDateFormat(filterDate)
-              ? (t('noDeliveries') || 'No hay entregas programadas')
+              ? t('noDeliveries')
               : filterDate && !isValidDateFormat(filterDate)
-              ? (t('invalidDateFormat') || 'Formato de fecha inválido')
-              : (t('selectDatePrompt') || 'Ingresa una fecha para filtrar')
+              ? t('invalidDateFormat')
+              : t('selectDatePrompt')
             }
           </Text>
           <Text style={styles.emptyMessage}>
             {filterDate && isValidDateFormat(filterDate)
-              ? (t('noDeliveriesMessage') || 'No hay entregas para esta fecha')
+              ? t('noDeliveriesMessage')
               : filterDate && !isValidDateFormat(filterDate)
-              ? (t('useDateFormat') || 'Por favor usa el formato YYYY-MM-DD (ej: 2025-10-29)')
-              : (t('selectDateMessage') || 'Ingresa una fecha en formato YYYY-MM-DD para consultar las entregas programadas')
+              ? t('useDateFormat')
+              : t('selectDateMessage')
             }
           </Text>
         </View>
@@ -554,17 +554,17 @@ const ScheduledDeliveriesScreen = () => {
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.title}>
-            {t('scheduledDeliveries') || 'Entregas Programadas'}
+            {t('scheduledDeliveries')}
           </Text>
         </View>
         <Text style={styles.subtitle}>
-          {filteredDeliveries.length} {filteredDeliveries.length === 1 ? 'entrega' : 'entregas'}
+          {filteredDeliveries.length} {filteredDeliveries.length === 1 ? t('delivery') : t('deliveries')}
         </Text>
       </View>
 
       {/* Filtro de fecha */}
       <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>{t('filterByDate') || 'Filtrar por fecha'}</Text>
+        <Text style={styles.filterLabel}>{t('filterByDate')}</Text>
         <View style={styles.dateFilterRow}>
           {Platform.OS === 'web' ? (
             // Input HTML para web
@@ -588,7 +588,7 @@ const ScheduledDeliveriesScreen = () => {
               onPress={() => setShowDatePicker(true)}
             >
               <Text style={styles.datePickerButtonText}>
-                📅 {filterDate || t('selectDate') || 'Seleccionar fecha'}
+                📅 {filterDate || t('selectDate')}
               </Text>
             </TouchableOpacity>
           )}
@@ -617,13 +617,13 @@ const ScheduledDeliveriesScreen = () => {
                   style={styles.cancelButton}
                   onPress={() => setShowDatePicker(false)}
                 >
-                  <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                  <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.applyButton}
                   onPress={applyDateFilter}
                 >
-                  <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                  <Text style={styles.applyButtonText}>{t('apply')}</Text>
                 </TouchableOpacity>
               </View>
             )}

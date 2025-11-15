@@ -36,6 +36,17 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+// Mock expo-image-picker
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({ canceled: true, assets: [] }),
+  MediaTypeOptions: {
+    Images: 'Images',
+    Videos: 'Videos',
+    All: 'All',
+  },
+}));
+
 // Import component after mocks
 import RegisterVisitScreen from '../app/register-visit';
 

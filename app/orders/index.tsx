@@ -59,11 +59,11 @@ const OrdersScreen = () => {
     switch (upperStatus) {
       case 'BORRADOR':
         return '#9E9E9E'; // Gray
-      case 'PENDIENTE':
+      case 'APROBADO':
         return '#FF9800'; // Orange
       case 'EN_PROCESO':
         return '#2196F3'; // Blue
-      case 'COMPLETADO':
+      case 'DESPACHADO':
         return '#4CAF50'; // Green
       case 'CANCELADO':
         return '#F44336'; // Red
@@ -77,15 +77,15 @@ const OrdersScreen = () => {
     const upperStatus = status.toUpperCase();
     switch (upperStatus) {
       case 'BORRADOR':
-        return t('draft') || 'Borrador';
-      case 'PENDIENTE':
-        return t('pending') || 'Pendiente';
+        return t('draft');
+      case 'APROBADO':
+        return t('approved');
       case 'EN_PROCESO':
-        return t('in_process') || 'En Proceso';
-      case 'COMPLETADO':
-        return t('completed') || 'Completado';
+        return t('in_process');
+      case 'DESPACHADO':
+        return t('dispatched');
       case 'CANCELADO':
-        return t('cancelled') || 'Cancelado';
+        return t('cancelled');
       default:
         return status;
     }
@@ -203,7 +203,7 @@ const OrdersScreen = () => {
             fetchOrders();
           }}
         >
-          <Text style={styles.retryButtonText}>Reintentar</Text>
+          <Text style={styles.retryButtonText}>{t('retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -212,9 +212,9 @@ const OrdersScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('orders') || 'Pedidos'}</Text>
+        <Text style={styles.title}>{t('orders')}</Text>
         <Text style={styles.subtitle}>
-          {filteredOrders.length} {filteredOrders.length === 1 ? 'pedido' : 'pedidos'}
+          {filteredOrders.length} {filteredOrders.length === 1 ? t('order') : t('orders').toLowerCase()}
         </Text>
       </View>
       <FlatList

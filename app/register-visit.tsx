@@ -1,8 +1,10 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -168,6 +170,7 @@ const RegisterVisitScreen = () => {
   const [nombreContacto, setNombreContacto] = useState('');
   const [hallazgosTecnicos, setHallazgosTecnicos] = useState('');
   const [sugerenciasProducto, setSugerenciasProducto] = useState('');
+  const [mediaFiles, setMediaFiles] = useState<ImagePicker.ImagePickerAsset[]>([]);
   
   // UI state
   const [loading, setLoading] = useState(false);
@@ -205,6 +208,38 @@ const RegisterVisitScreen = () => {
     } finally {
       setLoadingClients(false);
     }
+  };
+
+  const pickMedia = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        setError(t('mediaPermissionDenied') || 'Se necesitan permisos para acceder a la galería');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+        videoMaxDuration: 60, // 60 seconds max
+      });
+
+      if (!result.canceled && result.assets) {
+        setMediaFiles(result.assets);
+      }
+    } catch (err) {
+      console.error('Error picking media:', err);
+      setError(t('errorPickingMedia') || 'Error al seleccionar archivo');
+    }
+  };
+
+  const removeMedia = (index: number) => {
+    const newMediaFiles = mediaFiles.filter((_, i) => i !== index);
+    setMediaFiles(newMediaFiles);
   };
 
   const validateForm = (): boolean => {
@@ -254,12 +289,25 @@ const RegisterVisitScreen = () => {
 
       // Si viene de una visita existente (tiene visitId), crear detalle
       if (visitId) {
-        const detailData = {
+        const detailData: any = {
           id_cliente: String(finalClientId),
           atendido_por: finalContactName,
           hallazgos: hallazgosTecnicos.trim(),
           sugerencias_producto: sugerenciasProducto.trim(),
         };
+
+        // Agregar foto si existe (solo la primera por ahora)
+        if (mediaFiles.length > 0) {
+          const file = mediaFiles[0];
+          const fileName = file.uri.split('/').pop() || 'photo.jpg';
+          const fileType = file.type === 'video' ? 'video/mp4' : 'image/jpeg';
+          
+          detailData.foto = {
+            uri: file.uri,
+            type: fileType,
+            name: fileName,
+          };
+        }
 
         await createVisitDetail(visitId, detailData);
       } else {
@@ -281,6 +329,7 @@ const RegisterVisitScreen = () => {
       setNombreContacto('');
       setHallazgosTecnicos('');
       setSugerenciasProducto('');
+      setMediaFiles([]);
       setFieldErrors({});
       
       // Redirect after a brief delay
@@ -405,6 +454,54 @@ const RegisterVisitScreen = () => {
             numberOfLines={4}
             textAlignVertical="top"
           />
+        </View>
+
+        {/* Fotos y Videos */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>{t('photosVideos') || 'Fotos y Videos'}</Text>
+          
+          <TouchableOpacity
+            style={[
+              styles.mediaButton,
+              (loading || mediaFiles.length > 0) && styles.mediaButtonDisabled
+            ]}
+            onPress={pickMedia}
+            disabled={loading || mediaFiles.length > 0}
+          >
+            <Text style={styles.mediaButtonIcon}>📷</Text>
+            <Text style={styles.mediaButtonText}>
+              {t('addPhotoVideo') || 'Agregar Foto o Video'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Media Preview */}
+          {mediaFiles.length > 0 && (
+            <View style={styles.mediaPreviewContainer}>
+              <Text style={styles.mediaPreviewTitle}>
+                1 archivo seleccionado
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaScrollView}>
+                {mediaFiles.map((media, index) => (
+                  <View key={index} style={styles.mediaPreviewItem}>
+                    {media.type === 'image' ? (
+                      <Image source={{ uri: media.uri }} style={styles.mediaPreviewImage} />
+                    ) : (
+                      <View style={styles.videoPreview}>
+                        <Text style={styles.videoPreviewIcon}>🎥</Text>
+                        <Text style={styles.videoPreviewText}>Video</Text>
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      style={styles.mediaRemoveButton}
+                      onPress={() => removeMedia(index)}
+                    >
+                      <Text style={styles.mediaRemoveButtonText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
 
         <View style={styles.helpText}>
@@ -713,6 +810,84 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 2,
     textAlign: 'right',
+  },
+  mediaButton: {
+    backgroundColor: '#6750A4',
+    borderRadius: 8,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  mediaButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+    opacity: 0.6,
+  },
+  mediaButtonIcon: {
+    fontSize: 20,
+  },
+  mediaButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  mediaPreviewContainer: {
+    marginTop: 12,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 12,
+  },
+  mediaPreviewTitle: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  mediaScrollView: {
+    marginTop: 4,
+  },
+  mediaPreviewItem: {
+    marginRight: 12,
+    position: 'relative',
+  },
+  mediaPreviewImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    backgroundColor: '#E0E0E0',
+  },
+  videoPreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPreviewIcon: {
+    fontSize: 32,
+  },
+  videoPreviewText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  mediaRemoveButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#DC362E',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaRemoveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 

@@ -2,15 +2,15 @@ import { Link, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useOrder } from '../contexts/OrderContext';
 import { createOrder } from '../services/orderService';
@@ -240,14 +240,14 @@ const NewOrderScreen = () => {
 
       // Validar que haya productos en el pedido
       if (products.length === 0) {
-        setError('Debe agregar al menos un producto al pedido');
+        setError(t('mustAddProduct'));
         setLoading(false);
         return;
       }
 
       // Validar formato de fecha si se proporcionó
       if (deliveryDate && !isValidDateFormat(deliveryDate)) {
-        setError('Formato de fecha inválido. Use YYYY-MM-DD (ej: 2025-10-30)');
+        setError(t('invalidDateFormat2'));
         setLoading(false);
         return;
       }
@@ -255,7 +255,7 @@ const NewOrderScreen = () => {
       // Validar que todos los productos tengan bodega_id
       const productsWithoutWarehouse = products.filter(p => !p.bodega_id);
       if (productsWithoutWarehouse.length > 0) {
-        setError('Algunos productos no tienen bodega asignada');
+        setError(t('productsWithoutWarehouse'));
         setLoading(false);
         return;
       }
@@ -265,8 +265,8 @@ const NewOrderScreen = () => {
 
       // Validar que haya seleccionado un usuario (cliente o vendedor según el rol)
       if (!selectedUserId) {
-        const userToSelectLabel = user.role === 'seller' ? 'un cliente institucional' : 'un vendedor';
-        setError(`Debe seleccionar ${userToSelectLabel}`);
+        const errorKey = user.role === 'seller' ? 'mustSelectClient' : 'mustSelectSeller';
+        setError(t(errorKey));
         setLoading(false);
         return;
       }
@@ -310,7 +310,7 @@ const NewOrderScreen = () => {
       );
 
       if (invalidItems.length > 0) {
-        throw new Error('Algunos productos tienen valores inválidos. Por favor verifica la información.');
+        throw new Error(t('invalidProductValues'));
       }
 
       // Crear el payload del pedido

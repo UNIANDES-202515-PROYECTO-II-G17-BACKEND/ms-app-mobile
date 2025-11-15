@@ -24,6 +24,13 @@ jest.mock('react-i18next', () => ({
         cancelled: 'Cancelled',
         noOrders: 'No Orders',
         noOrdersMessage: 'You don\'t have any orders yet',
+        all: 'All',
+        dispatched: 'Dispatched',
+        approved: 'Approved',
+        finalized: 'Finalized',
+        delivered: 'Delivered',
+        inTransit: 'In Transit',
+        retry: 'Reintentar',
       };
       return translations[key] || key;
     },
@@ -86,7 +93,7 @@ describe('OrdersScreen', () => {
       id: '2',
       codigo: 'SO-2025-002',
       tipo: 'VENTA',
-      estado: 'PENDIENTE',
+      estado: 'APROBADO',
       proveedor_id: null,
       oc_id: null,
       cliente_id: 789,
@@ -192,7 +199,7 @@ describe('OrdersScreen', () => {
 
     await waitFor(() => {
       expect(getByText('Draft')).toBeTruthy();
-      expect(getByText('Pending')).toBeTruthy();
+      expect(getByText('Approved')).toBeTruthy();
     });
   });
 
@@ -262,7 +269,7 @@ describe('OrdersScreen', () => {
 
   it('handles orders with different estados correctly', async () => {
     const ordersWithDifferentStates = [
-      { ...mockOrders[0], estado: 'COMPLETADO' },
+      { ...mockOrders[0], estado: 'DESPACHADO' },
       { ...mockOrders[1], estado: 'CANCELADO' },
       { ...mockOrders[0], id: '3', codigo: 'SO-2025-003', estado: 'EN_PROCESO' },
     ];
@@ -272,7 +279,7 @@ describe('OrdersScreen', () => {
     const { getByText } = render(<OrdersScreen />);
 
     await waitFor(() => {
-      expect(getByText('Completed')).toBeTruthy();
+      expect(getByText('Dispatched')).toBeTruthy();
       expect(getByText('Cancelled')).toBeTruthy();
       expect(getByText('In Process')).toBeTruthy();
     });

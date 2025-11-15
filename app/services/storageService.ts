@@ -4,6 +4,7 @@ const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const EXPIRES_AT_KEY = 'expires_at';
 const USER_COUNTRY_KEY = 'user_country';
+const LANGUAGE_KEY = 'language';
 
 const getAsyncStorage = () => {
   // require dynamically to avoid native module load during Jest tests
@@ -93,4 +94,25 @@ export const getUserCountry = async (): Promise<CountryCode> => {
   }
 };
 
-export default { saveAuth, clearAuth, getAccessToken, getAuth, saveUserCountry, getUserCountry };
+// Guardar el idioma del usuario
+export const saveLanguage = async (language: string): Promise<void> => {
+  try {
+    const AsyncStorage = getAsyncStorage();
+    await AsyncStorage.setItem(LANGUAGE_KEY, language);
+  } catch (e) {
+    console.warn('Failed saving language', e);
+  }
+};
+
+// Obtener el idioma del usuario
+export const getStoredLanguage = async (): Promise<string | null> => {
+  try {
+    const AsyncStorage = getAsyncStorage();
+    return await AsyncStorage.getItem(LANGUAGE_KEY);
+  } catch (e) {
+    console.warn('Failed getting language', e);
+    return null;
+  }
+};
+
+export default { saveAuth, clearAuth, getAccessToken, getAuth, saveUserCountry, getUserCountry, saveLanguage, getStoredLanguage };
