@@ -39,6 +39,11 @@ jest.mock('react-i18next', () => ({
         pending: 'Pendiente',
         inTransit: 'En camino',
         cancelled: 'Cancelada',
+        route: 'Ruta',
+        stop: 'Parada',
+        delivery: 'entrega',
+        deliveries: 'entregas',
+        filterByDate: 'Filtrar por fecha',
       };
       return translations[key] || key;
     },

@@ -231,7 +231,7 @@ const VisitsScreen = () => {
         {!isCompleted && (
           <View style={styles.visitFooter}>
             <Text style={styles.clickHintText}>
-              {t('tapToRegisterDetails') || 'Toca para registrar detalles'}
+              {t('tapToRegisterDetails')}
             </Text>
             <Text style={styles.arrowIcon}>→</Text>
           </View>
@@ -291,13 +291,13 @@ const VisitsScreen = () => {
           <Text style={styles.title}>{t('myVisits')}</Text>
         </View>
         <Text style={styles.subtitle}>
-          {visits.length} {visits.length === 1 ? 'visita' : 'visitas'}
+          {visits.length} {visits.length === 1 ? t('visit') : t('visits').toLowerCase()}
         </Text>
       </View>
 
       {/* Date Filter */}
       <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>{t('filterByDate') || 'Filtrar por fecha'}:</Text>
+        <Text style={styles.filterLabel}>{t('filterByDate')}</Text>
         <View style={styles.dateFilterRow}>
           {Platform.OS === 'web' ? (
             // Input HTML para web
@@ -321,7 +321,7 @@ const VisitsScreen = () => {
               onPress={() => setShowDatePicker(true)}
             >
               <Text style={styles.datePickerButtonText}>
-                📅 {filterDate || t('selectDate') || 'Seleccionar fecha'}
+                📅 {filterDate || t('selectDate')}
               </Text>
             </TouchableOpacity>
           )}
@@ -350,13 +350,13 @@ const VisitsScreen = () => {
                   style={styles.cancelButton}
                   onPress={() => setShowDatePicker(false)}
                 >
-                  <Text style={styles.cancelButtonText}>{t('cancel') || 'Cancelar'}</Text>
+                  <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.applyButton}
                   onPress={applyDateFilter}
                 >
-                  <Text style={styles.applyButtonText}>{t('apply') || 'Aplicar'}</Text>
+                  <Text style={styles.applyButtonText}>{t('apply')}</Text>
                 </TouchableOpacity>
               </View>
             )}

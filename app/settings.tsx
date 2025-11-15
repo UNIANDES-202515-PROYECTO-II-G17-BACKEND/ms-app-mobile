@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BottomNavigationBar from './common/BottomNavigationBar';
 import { changeLanguage } from './common/i18n';
 import { useUserRole } from './hooks/useUserRole';
-import { clearAuth } from './services/storageService';
+import { clearAuth, getStoredLanguage } from './services/storageService';
 import { clearUserCache } from './services/userService';
 
 // Custom Radio Button Component
@@ -25,13 +25,27 @@ const RadioButton: React.FC<RadioButtonProps> = ({ selected, label, onPress }) =
 );
 
 const SettingsScreen = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { userRole } = useUserRole();
   // Settings está en índice 4 para sellers (5 tabs) y en índice 3 para clientes (4 tabs)
   const settingsIndex = userRole === 'seller' ? 4 : 3;
   const [value, setValue] = React.useState(settingsIndex);
   const [language, setLanguage] = React.useState('es');
+
+  // Cargar el idioma guardado cuando se monta el componente
+  useEffect(() => {
+    const loadLanguage = async () => {
+      const storedLanguage = await getStoredLanguage();
+      if (storedLanguage) {
+        setLanguage(storedLanguage);
+      } else {
+        // Si no hay idioma guardado, usar el idioma actual de i18n
+        setLanguage(i18n.language || 'es');
+      }
+    };
+    loadLanguage();
+  }, [i18n.language]);
 
   const handleLanguageChange = async (selectedLanguage: string) => {
     setLanguage(selectedLanguage);

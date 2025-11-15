@@ -2,13 +2,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    ActivityIndicator,
-    FlatList,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { getOrders, Order, OrderItem } from '../services/orderService';
 import { getProductDetail } from '../services/productService';
@@ -88,11 +88,11 @@ const OrderDetailScreen = () => {
     switch (upperStatus) {
       case 'BORRADOR':
         return '#9E9E9E'; // Gray
-      case 'PENDIENTE':
+      case 'APROBADO':
         return '#FF9800'; // Orange
       case 'EN_PROCESO':
         return '#2196F3'; // Blue
-      case 'COMPLETADO':
+      case 'DESPACHADO':
         return '#4CAF50'; // Green
       case 'CANCELADO':
         return '#F44336'; // Red
@@ -107,12 +107,12 @@ const OrderDetailScreen = () => {
     switch (upperStatus) {
       case 'BORRADOR':
         return t('draft') || 'Borrador';
-      case 'PENDIENTE':
-        return t('pending') || 'Pendiente';
+      case 'APROBADO':
+        return t('approved') || 'Aprobado';
       case 'EN_PROCESO':
         return t('in_process') || 'En Proceso';
-      case 'COMPLETADO':
-        return t('completed') || 'Completado';
+      case 'DESPACHADO':
+        return t('dispatched') || 'Despachado';
       case 'CANCELADO':
         return t('cancelled') || 'Cancelado';
       default:
@@ -163,7 +163,7 @@ const OrderDetailScreen = () => {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#6750A4" />
-        <Text style={styles.loadingText}>Cargando detalle del pedido...</Text>
+        <Text style={styles.loadingText}>{t('loadingOrderDetail')}</Text>
       </View>
     );
   }
@@ -171,12 +171,12 @@ const OrderDetailScreen = () => {
   if (error || !order) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error || 'Pedido no encontrado'}</Text>
+        <Text style={styles.errorText}>{error || t('orderNotFound')}</Text>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={() => router.back()}
         >
-          <Text style={styles.backButtonText}>Volver</Text>
+          <Text style={styles.backButtonText}>{t('back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -193,7 +193,7 @@ const OrderDetailScreen = () => {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>{t('order') || 'Pedido'}</Text>
+          <Text style={styles.headerTitle}>{t('order')}</Text>
         </View>
         <View style={styles.placeholder} />
       </View>
@@ -237,7 +237,7 @@ const OrderDetailScreen = () => {
           <View style={styles.divider} />
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{t('total') || 'Total'}:</Text>
+            <Text style={styles.totalLabel}>{t('total')}:</Text>
             <Text style={styles.totalValue}>{formatPrice(order.total)}</Text>
           </View>
         </View>
@@ -245,7 +245,7 @@ const OrderDetailScreen = () => {
         {/* Listado de items */}
         <View style={styles.itemsSection}>
           <Text style={styles.sectionTitle}>
-            {t('orderItems') || 'Items del pedido'} ({order.items.length})
+            {t('orderItems')} ({order.items.length})
           </Text>
           
           <FlatList
