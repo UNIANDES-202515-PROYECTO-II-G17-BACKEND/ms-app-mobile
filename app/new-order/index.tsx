@@ -62,6 +62,7 @@ interface CustomSelectProps {
   onChange: (value: number | string) => void;
   disabled?: boolean;
   loading?: boolean;
+  t: any;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({ 
@@ -70,7 +71,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   options, 
   onChange, 
   disabled = false,
-  loading = false 
+  loading = false,
+  t
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const selectedOption = options.find(opt => opt.value === value);
@@ -136,7 +138,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
               style={styles.modalCloseButton}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+              <Text style={styles.modalCloseButtonText}>{t('close')}</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -397,7 +399,7 @@ const NewOrderScreen = () => {
             </TouchableOpacity>
           </View>
           {deliveryDate && !isValidDateFormat(deliveryDate) && (
-            <Text style={styles.errorText}>Formato inválido. Use YYYY-MM-DD</Text>
+            <Text style={styles.errorText}>{t('invalidDateFormat2')}</Text>
           )}
         </View>
 
@@ -413,13 +415,13 @@ const NewOrderScreen = () => {
             onPress={() => setShowDatePicker(false)}
           >
             <View style={styles.datePickerModal}>
-              <Text style={styles.modalTitle}>Seleccionar Fecha de Entrega</Text>
+              <Text style={styles.modalTitle}>{t('selectDeliveryDate')}</Text>
               <View style={styles.dateOptions}>
                 <TouchableOpacity
                   style={styles.dateOption}
                   onPress={() => selectDate(0)}
                 >
-                  <Text style={styles.dateOptionText}>Hoy</Text>
+                  <Text style={styles.dateOptionText}>{t('today')}</Text>
                   <Text style={styles.dateOptionDate}>{formatDateToISO(new Date())}</Text>
                 </TouchableOpacity>
                 
@@ -427,7 +429,7 @@ const NewOrderScreen = () => {
                   style={styles.dateOption}
                   onPress={() => selectDate(1)}
                 >
-                  <Text style={styles.dateOptionText}>Mañana</Text>
+                  <Text style={styles.dateOptionText}>{t('tomorrow')}</Text>
                   <Text style={styles.dateOptionDate}>
                     {formatDateToISO(new Date(Date.now() + 86400000))}
                   </Text>
@@ -437,7 +439,7 @@ const NewOrderScreen = () => {
                   style={styles.dateOption}
                   onPress={() => selectDate(7)}
                 >
-                  <Text style={styles.dateOptionText}>En 7 días</Text>
+                  <Text style={styles.dateOptionText}>{t('inDays').replace('{count}', '7')}</Text>
                   <Text style={styles.dateOptionDate}>
                     {formatDateToISO(new Date(Date.now() + 7 * 86400000))}
                   </Text>
@@ -447,7 +449,7 @@ const NewOrderScreen = () => {
                   style={styles.dateOption}
                   onPress={() => selectDate(15)}
                 >
-                  <Text style={styles.dateOptionText}>En 15 días</Text>
+                  <Text style={styles.dateOptionText}>{t('inDays').replace('{count}', '15')}</Text>
                   <Text style={styles.dateOptionDate}>
                     {formatDateToISO(new Date(Date.now() + 15 * 86400000))}
                   </Text>
@@ -458,7 +460,7 @@ const NewOrderScreen = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setShowDatePicker(false)}
               >
-                <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+                <Text style={styles.modalCloseButtonText}>{t('close')}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -473,14 +475,15 @@ const NewOrderScreen = () => {
             onChange={(value) => setSelectedUserId(value as number)}
             disabled={loadingUsers}
             loading={loadingUsers}
+            t={t}
           />
         )}
 
         {/* Lista de productos */}
         <View style={styles.productListContainer}>
-          <Text style={styles.sectionTitle}>Productos</Text>
+          <Text style={styles.sectionTitle}>{t('products')}</Text>
           {products.length === 0 ? (
-            <Text style={styles.emptyText}>No hay productos agregados</Text>
+            <Text style={styles.emptyText}>{t('noProductsAdded')}</Text>
           ) : (
             products.map((product) => (
               <View key={product.id} style={styles.productItem}>
@@ -492,7 +495,7 @@ const NewOrderScreen = () => {
                     Cantidad: {product.cantidad}
                     {product.observaciones ? ` - ${product.observaciones}` : ''}
                   </Text>
-                  <Text style={styles.productStock}>Stock: {product.stock}</Text>
+                  <Text style={styles.productStock}>{t('stock')}: {product.stock}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.deleteButton}
@@ -509,7 +512,7 @@ const NewOrderScreen = () => {
         <View style={styles.addButtonContainer}>
           <Link href="/new-order/add-product" asChild>
             <TouchableOpacity style={styles.addButton}>
-              <Text style={styles.addButtonText}>+ Agregar Producto</Text>
+              <Text style={styles.addButtonText}>+ {t('addProduct')}</Text>
             </TouchableOpacity>
           </Link>
         </View>

@@ -267,7 +267,7 @@ const ScheduledDeliveriesScreen = () => {
               {t('scheduledDeliveries') || 'Entregas Programadas'}
             </Text>
           </View>
-          <Text style={styles.subtitle}>Cargando...</Text>
+          <Text style={styles.subtitle}>{t('loading')}...</Text>
         </View>
 
         {/* Filtro de fecha siempre visible */}
@@ -357,10 +357,10 @@ const ScheduledDeliveriesScreen = () => {
               {t('scheduledDeliveries') || 'Entregas Programadas'}
             </Text>
           </View>
-          <Text style={styles.subtitle}>0 entregas</Text>
+          <Text style={styles.subtitle}>0 {t('deliveries')}</Text>
         </View>
 
-        {/* Filtro de fecha siempre visible */}
+        {/* Filtro de fecha */}
         <View style={styles.filterContainer}>
           <Text style={styles.filterLabel}>
             {t('filterByDate')}
@@ -455,7 +455,7 @@ const ScheduledDeliveriesScreen = () => {
               {t('scheduledDeliveries') || 'Entregas Programadas'}
             </Text>
           </View>
-          <Text style={styles.subtitle}>0 entregas</Text>
+          <Text style={styles.subtitle}>0 {t('deliveries')}</Text>
         </View>
         
         {/* Filtro de fecha siempre visible */}

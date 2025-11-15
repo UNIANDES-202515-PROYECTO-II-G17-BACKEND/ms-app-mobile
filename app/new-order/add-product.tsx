@@ -308,7 +308,7 @@ const ProductSelect: React.FC<ProductSelectProps> = ({ label, value, products, o
               style={styles.modalCloseButton}
               onPress={() => setModalVisible(false)}
             >
-              <Text style={styles.modalCloseButtonText}>Cerrar</Text>
+              <Text style={styles.modalCloseButtonText}>{t('close')}</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
